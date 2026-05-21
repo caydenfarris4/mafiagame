@@ -24,7 +24,7 @@
     {
       "binding": "DB",
       "database_name": "dead-in-the-water",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "dbcc04fc-42f9-4119-a897-c94314c67cfd",
       "migrations_dir": "cf-migrations"
     }
   ],
