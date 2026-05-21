@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
 import { PHASES } from "@/lib/gameContent";
 
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
   const status = phase === 0 ? "SETUP" : phase >= MAX_PHASE ? "ENDED" : "RUNNING";
 
   // Changing phase always closes any open ballot.
+  const prisma = await getDb();
   await prisma.game.update({
     where: { id: gm.gameId },
     data: { currentPhase: phase, status, activeVoteRound: null },

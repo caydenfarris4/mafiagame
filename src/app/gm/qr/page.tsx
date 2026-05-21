@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { getCurrentCharacter } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import PrintButton from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,7 @@ export default async function QrSheetPage() {
   if (!gm.isGameMaster) redirect("/play");
 
   const baseUrl = await getBaseUrl();
+  const prisma = await getDb();
   const clues = await prisma.clue.findMany({
     where: { gameId: gm.gameId },
     orderBy: [{ phase: "asc" }, { code: "asc" }],

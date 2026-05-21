@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
 
 // GM opens or closes an accusation ballot. round = 4 | 5 to open, null to close.
@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Round must be 4, 5, or null." }, { status: 400 });
   }
 
+  const prisma = await getDb();
   await prisma.game.update({
     where: { id: gm.gameId },
     data: { activeVoteRound: round },

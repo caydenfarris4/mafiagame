@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
 
 // A player chooses to share a KEEP clue they found with the whole house.
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing clue." }, { status: 400 });
   }
 
+  const prisma = await getDb();
   const discovery = await prisma.clueDiscovery.findUnique({
     where: { clueId_characterId: { clueId: body.clueId, characterId: character.id } },
     include: { clue: true },

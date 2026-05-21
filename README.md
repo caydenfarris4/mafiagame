@@ -1,86 +1,106 @@
-# Mafia at Campus Home
+# Dead in the Water
 
-An interactive Mafia/Clue game for a house full of friends, intended for
-**campushome.us**. Each person logs in as their own character, walks around the
-house, and scans QR codes to uncover clues. Secret clues are private to the
-finder (the game master is notified); public clues can be released to everyone
-as announcements.
+A digital companion for the **"Dead in the Water"** murder-mystery party game, built
+for the Whitfield lake house weekend at **campushome.us**. Each guest logs in as their
+character, reads their private dossier, walks the house scanning QR-code clues, and the
+game master (Alexander) runs the five phases from a control dashboard.
 
-Built with Next.js (App Router) + TypeScript + Tailwind + Prisma.
+Built with Next.js (App Router) + TypeScript + Tailwind + Prisma, deployed to
+**Cloudflare Workers + D1** via OpenNext.
 
-## Quick start
+## What the app does
+
+- **Players** log in with a personal code and get:
+  - their private **character sheet** (dossier),
+  - the shared **Last Night** timeline,
+  - the current **search permit** (which rooms are open this phase),
+  - their **found clues** (KEEP clues have a "Share with the house" button),
+  - the **house feed** of public announcements,
+  - **accusation ballots** when the GM opens a vote.
+- **Scanning a clue QR** reveals it and is **phase-gated** (a Phase-4 clue won't open in
+  Phase 2). **ANNOUNCE** clues auto-broadcast to everyone; **KEEP** clues stay private to
+  the finder and only notify the GM.
+- **Game master dashboard** (`/gm`, login `GM-ALEX`): a phase stepper (unlocks rooms),
+  the scripted reveal + Solomon-line library (one tap pushes a line to all phones), a live
+  discovery feed, the clue tracker, the suspect roster (with true roles), and the two
+  accusation ballots with live tallies.
+- **Printable QR sheet** (`/gm/qr`) grouped by phase — print, cut out, and hide.
+
+Default logins (from the seed): GM `GM-ALEX`; players `HANK-01`, `CATHERINE-02`,
+`VIVI-03`, `SEBASTIAN-04`, `BELLA-05`, `BEAU-06`, `EDEN-07`, `LEVI-08`, `CODY-09`.
+
+## Local development
+
+Local dev uses a SQLite file (`prisma/dev.db`) through Prisma's libSQL adapter.
 
 ```bash
 npm install
-npm run db:migrate   # creates the local SQLite db and applies migrations
-npm run db:seed      # loads a sample game, characters, and clues
-npm run dev          # http://localhost:3000
+npm run db:migrate    # create the local SQLite db
+npm run db:seed       # load the game (prints all login codes)
+npm run dev           # http://localhost:3000
 ```
 
-The seed prints the login codes. By default:
+Useful scripts: `npm run db:studio` (DB browser), `npm run db:reset` (drop + reseed).
 
-| Character | Role      | Login code |
-| --------- | --------- | ---------- |
-| The Host  | Game Master | `GM-MASTER` |
-| Scarlet   | Mafia     | `SCARLET-1` |
-| Mustard   | Civilian  | `MUSTARD-2` |
-| Plum      | Detective | `PLUM-3`    |
-| Green     | Civilian  | `GREEN-4`   |
+## Architecture notes
 
-## How it works
+- Prisma runs **engine-free** (no Rust binary), so it needs a driver adapter everywhere.
+  There are two generated clients (see `prisma/schema.prisma`): the default Node client
+  (used locally via libSQL) and a `workerd`-targeted client in `src/generated/prisma`
+  (used on Cloudflare via the D1 adapter, loading its query-compiler WASM as a module).
+- `src/lib/prisma.ts#getDb()` picks the right one: on Workers it binds to the request's
+  D1 database; otherwise it uses the local libSQL file. All server code calls
+  `await getDb()` rather than importing a shared instance.
+- Sessions are signed cookies (`iron-session`), keyed to a per-character login code.
 
-- **Login** (`/`): each player enters their personal code. The game master is
-  redirected to `/gm`; everyone else lands on `/play`.
-- **Player dashboard** (`/play`): shows your character, the clues *you* have
-  found, and any public announcements the game master has released. Players
-  never see what other players have found. Polls for updates every 5s.
-- **Scanning a clue** (`/clue/[token]`): the QR codes link here. Scanning
-  records the discovery for the logged-in player and reveals the clue. If not
-  logged in, the player is sent to log in first and then returned to the clue.
-- **Game master dashboard** (`/gm`): a live, auto-refreshing feed of every clue
-  discovery (who found what, where, and when), the clue list with discovery
-  counts, and a roster of suspects. PUBLIC clues have a **Release** toggle that
-  makes them appear as announcements on every player's dashboard.
-- **QR sheet** (`/gm/qr`): print-ready QR codes for every clue, each linking to
-  its `/clue/[token]` URL. Print, cut out, and hide them around the house.
+## Deploying to Cloudflare (campushome.us)
 
-### Clue visibility
+Prerequisites: a Cloudflare account and `npx wrangler login`.
 
-- **SECRET** — only the finder sees the content; the game master is notified.
-- **PUBLIC** — intended to be announced to the whole house. It is only shown in
-  everyone's feed once the game master toggles **Release** (so you control
-  timing, e.g. "the body is found at 9 PM").
+**1. Create the D1 database** and paste the printed `database_id` into `wrangler.jsonc`
+(replacing `REPLACE_WITH_YOUR_D1_DATABASE_ID`):
 
-## Editing the game
+```bash
+npx wrangler d1 create dead-in-the-water
+```
 
-For now, characters and clues live in `prisma/seed.ts`. Edit that file and run
-`npm run db:reset` (wipes + re-seeds) to change the cast or the clues. A
-game-master editing UI is a natural next step.
+**2. Apply the schema and seed to the remote D1:**
 
-Useful scripts:
+```bash
+npm run d1:migrate:remote   # applies cf-migrations/0001_init.sql
+npm run d1:seed:remote      # applies cf-seed.sql (the cast, clues, reveals)
+```
 
-- `npm run db:studio` — visual DB browser (Prisma Studio)
-- `npm run db:reset` — drop, re-migrate, and re-seed the local DB
+> `cf-seed.sql` is committed and ready to use. To regenerate it (e.g. after editing the
+> cast or clues in `prisma/seed.ts`), run `npm run db:reset && npm run db:export-d1`.
 
-## Deploying to Vercel (campushome.us)
+**3. Set the session secret** (32+ chars):
 
-The dev database is SQLite, which does **not** persist on Vercel's serverless
-runtime. For production you need a hosted Postgres:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" | npx wrangler secret put SESSION_SECRET
+```
 
-1. Create a Postgres database (Vercel Postgres, Neon, or Supabase).
-2. In `prisma/schema.prisma`, change the datasource provider:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
-   ```
-3. Set these environment variables in Vercel:
-   - `DATABASE_URL` — the Postgres connection string
-   - `SESSION_SECRET` — a 32+ character random string
-     (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
-   - `NEXT_PUBLIC_BASE_URL` — `https://campushome.us` (used to build QR links)
-4. Run `npx prisma migrate deploy` against the production database, then seed it.
-5. Point the `campushome.us` domain at the Vercel project.
+`NEXT_PUBLIC_BASE_URL` is already set to `https://campushome.us` in `wrangler.jsonc`
+(used to build the QR-code links).
 
-See `.env.example` for the full list of environment variables.
+**4. Deploy:**
+
+```bash
+npm run cf:deploy
+```
+
+**5. Point the domain.** In the Cloudflare dashboard, add `campushome.us` as a custom
+domain / route for the Worker.
+
+### Local Cloudflare preview (optional)
+
+To run the exact Workers runtime locally against a local D1:
+
+```bash
+npm run d1:migrate:local
+npm run d1:seed:local
+echo 'SESSION_SECRET="local_dev_secret_at_least_32_characters"' > .dev.vars
+npm run cf:preview
+```
+
+See `.env.example` for environment variables.

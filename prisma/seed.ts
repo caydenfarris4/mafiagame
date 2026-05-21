@@ -1,7 +1,9 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 import { randomBytes } from "node:crypto";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaLibSQL({ url: "file:./prisma/dev.db" });
+const prisma = new PrismaClient({ adapter });
 
 const token = () => randomBytes(9).toString("base64url");
 const sheet = (sections: { heading: string; body: string }[]) =>

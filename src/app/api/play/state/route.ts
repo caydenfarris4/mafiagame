@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
 import { getPhase } from "@/lib/gameContent";
 
@@ -11,6 +11,7 @@ export async function GET() {
 
   const game = character.game;
   const round = game.activeVoteRound;
+  const prisma = await getDb();
 
   const [discoveries, announcements, myVote, candidates] = await Promise.all([
     prisma.clueDiscovery.findMany({

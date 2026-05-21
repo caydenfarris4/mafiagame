@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { normalizeCode } from "@/lib/auth";
 
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Enter your code." }, { status: 400 });
   }
 
+  const prisma = await getDb();
   const character = await prisma.character.findUnique({
     where: { loginCode: normalizeCode(body.code) },
   });

@@ -46,3 +46,11 @@ next-env.d.ts
 /prisma/dev.db-journal
 /prisma/*.db
 /prisma/*.db-journal
+
+# cloudflare / opennext build output
+/.open-next/
+/.wrangler/
+.dev.vars
+
+# generated prisma clients
+/src/generated

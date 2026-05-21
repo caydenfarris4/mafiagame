@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
 
 // A player casts (or changes) their accusation ballot for the open vote round.
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Pick a name." }, { status: 400 });
   }
 
+  const prisma = await getDb();
   await prisma.vote.upsert({
     where: {
       gameId_round_voterId: {

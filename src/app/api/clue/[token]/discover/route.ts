@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
 import { getPhase } from "@/lib/gameContent";
 
@@ -14,6 +14,7 @@ export async function POST(
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
+  const prisma = await getDb();
   const clue = await prisma.clue.findUnique({ where: { token } });
   if (!clue || clue.gameId !== character.gameId) {
     return NextResponse.json({ error: "Unknown clue." }, { status: 404 });

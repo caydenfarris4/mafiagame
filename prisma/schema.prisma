@@ -2,8 +2,19 @@
 // Dev uses SQLite; production targets Cloudflare D1 (also SQLite), so the schema
 // stays SQLite-compatible (string fields instead of native enums, JSON-as-string).
 
+// Local / Node client (next dev, seed, scripts) — engine-free, libSQL adapter.
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+
+// Cloudflare Workers client — engine-free, loads the query-compiler WASM as a
+// module (not via fs), which is what makes it run on workerd. Used in production.
+generator clientEdge {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "workerd"
+  moduleFormat = "esm"
 }
 
 datasource db {

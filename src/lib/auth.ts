@@ -1,5 +1,5 @@
 import "server-only";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 
 /** Returns the logged-in character (with its game), or null if not signed in. */
@@ -7,6 +7,7 @@ export async function getCurrentCharacter() {
   const session = await getSession();
   if (!session.characterId) return null;
 
+  const prisma = await getDb();
   const character = await prisma.character.findUnique({
     where: { id: session.characterId },
     include: { game: true },

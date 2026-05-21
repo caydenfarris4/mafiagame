@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
 
 // GM fires (or retracts) a scripted reveal / Solomon line into the player feed.
@@ -20,6 +20,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
+  const prisma = await getDb();
   const ann = await prisma.announcement.findUnique({ where: { id } });
   if (!ann || ann.gameId !== gm.gameId) {
     return NextResponse.json({ error: "Unknown announcement." }, { status: 404 });
