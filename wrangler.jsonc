@@ -28,10 +28,12 @@
       "migrations_dir": "cf-migrations"
     }
   ],
-  // Public base URL used to build QR links. Override per-environment if needed.
   "vars": {
-    "NEXT_PUBLIC_BASE_URL": "https://deadinthewater.caydenfarris.net"
+    // Public base URL used to build QR links.
+    "NEXT_PUBLIC_BASE_URL": "https://deadinthewater.caydenfarris.net",
+    // Cookie signing key. Fine to keep here for a private repo / one-weekend
+    // party game. To harden later: remove this line and instead run
+    //   npx wrangler secret put SESSION_SECRET
+    "SESSION_SECRET": "2307eaf85d607f5645d44c6d0260ab9d97876e52e9accdb799ce0851d3d7e55a"
   }
-  // SESSION_SECRET is a secret, not a var. Set it with:
-  //   npx wrangler secret put SESSION_SECRET
 }
