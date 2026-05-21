@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0b0c10;
+  --surface: #14161d;
+  --surface-2: #1c1f29;
+  --border: #2a2e3a;
+  --foreground: #e8e6e1;
+  --muted: #9aa0ad;
+  --accent: #b3122a; /* deep blood red */
+  --accent-soft: #7a1020;
+  --gold: #c9a24b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-gold: var(--gold);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+body {
+  background:
+    radial-gradient(
+      1200px 600px at 50% -10%,
+      rgba(179, 18, 42, 0.12),
+      transparent 60%
+    ),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

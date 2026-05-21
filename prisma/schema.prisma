@@ -1,0 +1,69 @@
+// Mafia/Clue interactive game data model.
+// Dev uses SQLite (DATABASE_URL="file:./dev.db"). For production on Vercel,
+// switch `provider` to "postgresql" and point DATABASE_URL at a hosted
+// Postgres (Vercel Postgres / Neon / Supabase), then run `prisma migrate deploy`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id         String      @id @default(cuid())
+  name       String
+  status     String      @default("LOBBY") // LOBBY | ACTIVE | ENDED
+  createdAt  DateTime    @default(now())
+  characters Character[]
+  clues      Clue[]
+}
+
+model Character {
+  id           String          @id @default(cuid())
+  gameId       String
+  game         Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  name         String // in-game character name
+  realName     String? // the real friend this character represents
+  role         String          @default("CIVILIAN") // MAFIA | DETECTIVE | CIVILIAN | ...
+  loginCode    String          @unique // personal code used to log in
+  isAlive      Boolean         @default(true)
+  isGameMaster Boolean         @default(false)
+  avatarColor  String?
+  createdAt    DateTime        @default(now())
+  discoveries  ClueDiscovery[]
+
+  @@index([gameId])
+}
+
+model Clue {
+  id          String          @id @default(cuid())
+  gameId      String
+  game        Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  title       String
+  content     String // text revealed when the clue is found
+  location    String? // where in the house it's hidden (GM reference)
+  // SECRET: only the finder sees it; the GM is notified but other players are not.
+  // PUBLIC:  intended to be announced to everyone (gated by isReleased).
+  visibility  String          @default("SECRET") // SECRET | PUBLIC
+  isReleased  Boolean         @default(false) // PUBLIC clues: shown in the global feed once true
+  token       String          @unique // opaque token embedded in the QR code URL
+  createdAt   DateTime        @default(now())
+  discoveries ClueDiscovery[]
+
+  @@index([gameId])
+}
+
+model ClueDiscovery {
+  id          String    @id @default(cuid())
+  clueId      String
+  clue        Clue      @relation(fields: [clueId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  foundAt     DateTime  @default(now())
+
+  @@unique([clueId, characterId])
+  @@index([characterId])
+}
