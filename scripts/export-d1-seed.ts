@@ -21,7 +21,7 @@ function insert(table: string, cols: string[], rows: Record<string, unknown>[]) 
   const lines: string[] = [];
   for (const r of rows) {
     const values = cols.map((c) => q(r[c])).join(", ");
-    lines.push(`INSERT INTO "${table}" (${cols.map((c) => `"${c}"`).join(", ")}) VALUES (${values});`);
+    lines.push(`INSERT OR IGNORE INTO "${table}" (${cols.map((c) => `"${c}"`).join(", ")}) VALUES (${values});`);
   }
   return lines.join("\n");
 }
