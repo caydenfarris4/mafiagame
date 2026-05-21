@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dead-in-the-water",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // The D1 database the app talks to. Create it with:
+  //   npx wrangler d1 create dead-in-the-water
+  // then paste the printed database_id below.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dead-in-the-water",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "migrations_dir": "cf-migrations"
+    }
+  ],
+  // Public base URL used to build QR links. Override per-environment if needed.
+  "vars": {
+    "NEXT_PUBLIC_BASE_URL": "https://deadinthewater.caydenfarris.net"
+  }
+  // SESSION_SECRET is a secret, not a var. Set it with:
+  //   npx wrangler secret put SESSION_SECRET
+}
