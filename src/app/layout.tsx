@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mafia at Campus Home",
-  description: "An interactive mafia & clue game for the house.",
+  title: "Dead in the Water",
+  description: "An interactive murder-mystery companion for the Whitfield lake house.",
 };
 
 export default function RootLayout({

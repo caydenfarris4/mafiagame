@@ -1,7 +1,6 @@
-// Mafia/Clue interactive game data model.
-// Dev uses SQLite (DATABASE_URL="file:./dev.db"). For production on Vercel,
-// switch `provider` to "postgresql" and point DATABASE_URL at a hosted
-// Postgres (Vercel Postgres / Neon / Supabase), then run `prisma migrate deploy`.
+// "Dead in the Water" — digital companion data model.
+// Dev uses SQLite; production targets Cloudflare D1 (also SQLite), so the schema
+// stays SQLite-compatible (string fields instead of native enums, JSON-as-string).
 
 generator client {
   provider = "prisma-client-js"
@@ -13,27 +12,34 @@ datasource db {
 }
 
 model Game {
-  id         String      @id @default(cuid())
-  name       String
-  status     String      @default("LOBBY") // LOBBY | ACTIVE | ENDED
-  createdAt  DateTime    @default(now())
-  characters Character[]
-  clues      Clue[]
+  id              String         @id @default(cuid())
+  name            String
+  status          String         @default("SETUP") // SETUP | RUNNING | ENDED
+  currentPhase    Int            @default(0) // 0 arrival, 1..5 phases, 6 closing toast
+  activeVoteRound Int? // 4 or 5 when a ballot is open; null when closed
+  createdAt       DateTime       @default(now())
+  characters      Character[]
+  clues           Clue[]
+  announcements   Announcement[]
+  votes           Vote[]
 }
 
 model Character {
   id           String          @id @default(cuid())
   gameId       String
   game         Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  name         String // in-game character name
-  realName     String? // the real friend this character represents
-  role         String          @default("CIVILIAN") // MAFIA | DETECTIVE | CIVILIAN | ...
-  loginCode    String          @unique // personal code used to log in
-  isAlive      Boolean         @default(true)
+  personaName  String // in-fiction name, e.g. "Hank Whitfield"
+  realName     String // the friend playing, e.g. "Daniel"
+  role         String // KILLER | ACCOMPLICE | SINNER | GM
+  loginCode    String          @unique
   isGameMaster Boolean         @default(false)
+  prop         String?
   avatarColor  String?
+  sheet        String          @default("[]") // JSON: { heading, body }[] — private character sheet
+  sortOrder    Int             @default(0)
   createdAt    DateTime        @default(now())
   discoveries  ClueDiscovery[]
+  votes        Vote[]          @relation("voter")
 
   @@index([gameId])
 }
@@ -42,14 +48,13 @@ model Clue {
   id          String          @id @default(cuid())
   gameId      String
   game        Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  code        String // "2-1"
   title       String
-  content     String // text revealed when the clue is found
-  location    String? // where in the house it's hidden (GM reference)
-  // SECRET: only the finder sees it; the GM is notified but other players are not.
-  // PUBLIC:  intended to be announced to everyone (gated by isReleased).
-  visibility  String          @default("SECRET") // SECRET | PUBLIC
-  isReleased  Boolean         @default(false) // PUBLIC clues: shown in the global feed once true
-  token       String          @unique // opaque token embedded in the QR code URL
+  content     String // text revealed when found
+  location    String // where it's hidden (GM reference)
+  phase       Int // becomes findable in this phase (2..5)
+  tag         String // ANNOUNCE (auto-broadcast when found) | KEEP (private to finder)
+  token       String          @unique // QR token in the URL
   createdAt   DateTime        @default(now())
   discoveries ClueDiscovery[]
 
@@ -62,8 +67,42 @@ model ClueDiscovery {
   clue        Clue      @relation(fields: [clueId], references: [id], onDelete: Cascade)
   characterId String
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  shared      Boolean   @default(false) // finder chose to share a KEEP clue with the house
   foundAt     DateTime  @default(now())
 
   @@unique([clueId, characterId])
   @@index([characterId])
+}
+
+// The public feed: GM scripted reveals (auto-reveals, Solomon lines, the cleat, etc.)
+// plus on-the-fly entries created when an ANNOUNCE clue is found or a KEEP clue is shared.
+model Announcement {
+  id         String    @id @default(cuid())
+  gameId     String
+  game       Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  kind       String // AUTO_REVEAL | SOLOMON | CLUE | SHARED_CLUE | GM_NOTE
+  title      String
+  body       String
+  phase      Int       @default(0)
+  sortOrder  Int       @default(0)
+  isScripted Boolean   @default(false) // part of the GM's pushable library (vs. created live)
+  isReleased Boolean   @default(false) // shows in the player feed once true
+  releasedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([gameId])
+}
+
+model Vote {
+  id          String    @id @default(cuid())
+  gameId      String
+  game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  round       Int // 4 (killer) | 5 (architect)
+  voterId     String
+  voter       Character @relation("voter", fields: [voterId], references: [id], onDelete: Cascade)
+  accusedName String
+  createdAt   DateTime  @default(now())
+
+  @@unique([gameId, round, voterId])
+  @@index([gameId])
 }

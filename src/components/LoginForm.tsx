@@ -43,7 +43,7 @@ export default function LoginForm({ next }: { next?: string }) {
           autoFocus
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="e.g. RAVEN-7"
+          placeholder="e.g. HANK-01"
           autoComplete="off"
           autoCapitalize="characters"
           className="rounded-lg border border-border bg-surface-2 px-4 py-3 text-lg tracking-widest text-foreground outline-none focus:border-accent"

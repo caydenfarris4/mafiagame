@@ -1,15 +1,18 @@
 import { redirect } from "next/navigation";
 import { getCurrentCharacter } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getPhase, LAST_NIGHT } from "@/lib/gameContent";
 import LogoutButton from "@/components/LogoutButton";
 import PlayBoard from "@/components/PlayBoard";
 
 export const dynamic = "force-dynamic";
 
-const ROLE_LABELS: Record<string, string> = {
-  MAFIA: "Mafia",
-  DETECTIVE: "Detective",
-  CIVILIAN: "Civilian",
+type Section = { heading: string; body: string };
+
+const ROLE_LABEL: Record<string, string> = {
+  KILLER: "Guest",
+  ACCOMPLICE: "Guest",
+  SINNER: "Guest",
+  GM: "House Manager",
 };
 
 export default async function PlayPage() {
@@ -17,53 +20,54 @@ export default async function PlayPage() {
   if (!character) redirect("/");
   if (character.isGameMaster) redirect("/gm");
 
-  const [discoveries, announcements] = await Promise.all([
-    prisma.clueDiscovery.findMany({
-      where: { characterId: character.id },
-      orderBy: { foundAt: "desc" },
-      include: {
-        clue: { select: { id: true, title: true, content: true, visibility: true } },
-      },
-    }),
-    prisma.clue.findMany({
-      where: { gameId: character.gameId, visibility: "PUBLIC", isReleased: true },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, title: true, content: true },
-    }),
-  ]);
+  let sheet: Section[] = [];
+  try {
+    sheet = JSON.parse(character.sheet);
+  } catch {
+    sheet = [];
+  }
 
+  const game = character.game;
   const initial = {
-    discoveries: discoveries.map((d) => ({
-      id: d.id,
-      foundAt: d.foundAt.toISOString(),
-      clue: d.clue,
-    })),
-    announcements,
+    game: {
+      name: game.name,
+      status: game.status,
+      currentPhase: game.currentPhase,
+      activeVoteRound: game.activeVoteRound,
+    },
+    phase: getPhase(game.currentPhase),
+    discoveries: [],
+    announcements: [],
+    myVote: null,
+    candidates: [],
   };
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 p-5">
-      <header className="mb-8 flex items-start justify-between gap-4 border-b border-border pb-5">
+      <header className="mb-6 flex items-start justify-between gap-4 border-b border-border pb-5">
         <div className="flex items-center gap-3">
           <span
             className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white"
             style={{ background: character.avatarColor ?? "#7a1020" }}
           >
-            {character.name.charAt(0).toUpperCase()}
+            {character.personaName.charAt(0)}
           </span>
           <div>
-            <h1 className="text-xl font-bold leading-tight">{character.name}</h1>
+            <h1 className="text-xl font-bold leading-tight">{character.personaName}</h1>
             <p className="text-xs uppercase tracking-widest text-muted">
-              {character.realName ? `${character.realName} · ` : ""}
-              {ROLE_LABELS[character.role] ?? character.role}
-              {character.isAlive ? "" : " · eliminated"}
+              {character.realName} · {ROLE_LABEL[character.role] ?? "Guest"}
             </p>
           </div>
         </div>
         <LogoutButton />
       </header>
 
-      <PlayBoard initial={initial} />
+      <PlayBoard
+        prop={character.prop}
+        sheet={sheet}
+        lastNight={LAST_NIGHT}
+        initial={initial}
+      />
     </main>
   );
 }

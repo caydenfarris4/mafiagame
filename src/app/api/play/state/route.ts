@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
+import { getPhase } from "@/lib/gameContent";
 
 export async function GET() {
   const character = await getCurrentCharacter();
@@ -8,32 +9,63 @@ export async function GET() {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const [discoveries, announcements] = await Promise.all([
-    // The player's own found clues (and only their own).
+  const game = character.game;
+  const round = game.activeVoteRound;
+
+  const [discoveries, announcements, myVote, candidates] = await Promise.all([
     prisma.clueDiscovery.findMany({
       where: { characterId: character.id },
       orderBy: { foundAt: "desc" },
       include: {
-        clue: { select: { id: true, title: true, content: true, visibility: true } },
+        clue: { select: { id: true, code: true, title: true, content: true, tag: true } },
       },
     }),
-    // Public clues the GM has released — visible to everyone.
-    prisma.clue.findMany({
-      where: { gameId: character.gameId, visibility: "PUBLIC", isReleased: true },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, title: true, content: true },
+    prisma.announcement.findMany({
+      where: { gameId: game.id, isReleased: true },
+      orderBy: { releasedAt: "desc" },
+    }),
+    round
+      ? prisma.vote.findUnique({
+          where: {
+            gameId_round_voterId: {
+              gameId: game.id,
+              round,
+              voterId: character.id,
+            },
+          },
+        })
+      : Promise.resolve(null),
+    prisma.character.findMany({
+      where: { gameId: game.id, isGameMaster: false, id: { not: character.id } },
+      orderBy: { sortOrder: "asc" },
+      select: { personaName: true },
     }),
   ]);
 
+  const phase = getPhase(game.currentPhase);
+
   return NextResponse.json({
-    character: {
-      name: character.name,
-      realName: character.realName,
-      role: character.role,
-      isAlive: character.isAlive,
-      avatarColor: character.avatarColor,
+    game: {
+      name: game.name,
+      status: game.status,
+      currentPhase: game.currentPhase,
+      activeVoteRound: round,
     },
-    discoveries,
-    announcements,
+    phase,
+    discoveries: discoveries.map((d) => ({
+      id: d.id,
+      shared: d.shared,
+      foundAt: d.foundAt.toISOString(),
+      clue: d.clue,
+    })),
+    announcements: announcements.map((a) => ({
+      id: a.id,
+      kind: a.kind,
+      title: a.title,
+      body: a.body,
+      releasedAt: (a.releasedAt ?? a.createdAt).toISOString(),
+    })),
+    myVote: myVote ? { accusedName: myVote.accusedName } : null,
+    candidates: candidates.map((c) => c.personaName),
   });
 }

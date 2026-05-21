@@ -19,14 +19,14 @@ export default async function Home({
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <p className="text-xs uppercase tracking-[0.4em] text-gold">
-            Campus Home presents
+            The Whitfield Lake House
           </p>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">
-            A House of Secrets
+            Dead in the Water
           </h1>
           <p className="mt-3 text-muted">
-            Log in as your character. Trust no one. Find the clues before the
-            mafia finds you.
+            A guest is dead in the shallows. Log in as your character, search the
+            house, and find the truth before the family tears itself apart.
           </p>
         </div>
 

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentCharacter } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getPhase } from "@/lib/gameContent";
 import LogoutButton from "@/components/LogoutButton";
 import GmDashboard from "@/components/GmDashboard";
 
@@ -11,42 +11,28 @@ export default async function GmPage() {
   if (!gm) redirect("/");
   if (!gm.isGameMaster) redirect("/play");
 
-  const [discoveries, clues, characters] = await Promise.all([
-    prisma.clueDiscovery.findMany({
-      where: { clue: { gameId: gm.gameId } },
-      orderBy: { foundAt: "desc" },
-      include: {
-        character: { select: { id: true, name: true, realName: true, avatarColor: true } },
-        clue: { select: { id: true, title: true, visibility: true, location: true } },
-      },
-      take: 200,
-    }),
-    prisma.clue.findMany({
-      where: { gameId: gm.gameId },
-      orderBy: { createdAt: "asc" },
-      include: { _count: { select: { discoveries: true } } },
-    }),
-    prisma.character.findMany({
-      where: { gameId: gm.gameId, isGameMaster: false },
-      orderBy: { name: "asc" },
-      include: { _count: { select: { discoveries: true } } },
-    }),
-  ]);
-
+  const game = gm.game;
   const initial = {
-    discoveries: discoveries.map((d) => ({ ...d, foundAt: d.foundAt.toISOString() })),
-    clues,
-    characters,
+    game: {
+      name: game.name,
+      status: game.status,
+      currentPhase: game.currentPhase,
+      activeVoteRound: game.activeVoteRound,
+    },
+    phase: getPhase(game.currentPhase),
+    discoveries: [],
+    clues: [],
+    characters: [],
+    library: [],
+    votes: [],
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 p-5">
-      <header className="mb-8 flex items-center justify-between gap-4 border-b border-border pb-5">
+    <main className="mx-auto w-full max-w-3xl flex-1 p-5">
+      <header className="mb-5 flex items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-gold">
-            Game Master
-          </p>
-          <h1 className="text-2xl font-bold">{gm.game.name}</h1>
+          <p className="text-xs uppercase tracking-[0.3em] text-gold">Game Master · Alexander</p>
+          <h1 className="text-2xl font-bold">{game.name}</h1>
         </div>
         <LogoutButton />
       </header>
