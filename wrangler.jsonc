@@ -24,7 +24,7 @@
   ],
   // Public base URL used to build QR links. Override per-environment if needed.
   "vars": {
-    "NEXT_PUBLIC_BASE_URL": "https://campushome.us"
+    "NEXT_PUBLIC_BASE_URL": "https://deadinthewater.caydenfarris.net"
   }
   // SESSION_SECRET is a secret, not a var. Set it with:
   //   npx wrangler secret put SESSION_SECRET

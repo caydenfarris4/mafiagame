@@ -1,7 +1,7 @@
 # Dead in the Water
 
 A digital companion for the **"Dead in the Water"** murder-mystery party game, built
-for the Whitfield lake house weekend at **campushome.us**. Each guest logs in as their
+for the Whitfield lake house weekend at **deadinthewater.caydenfarris.net**. Each guest logs in as their
 character, reads their private dossier, walks the house scanning QR-code clues, and the
 game master (Alexander) runs the five phases from a control dashboard.
 
@@ -53,7 +53,7 @@ Useful scripts: `npm run db:studio` (DB browser), `npm run db:reset` (drop + res
   `await getDb()` rather than importing a shared instance.
 - Sessions are signed cookies (`iron-session`), keyed to a per-character login code.
 
-## Deploying to Cloudflare (campushome.us)
+## Deploying to Cloudflare (deadinthewater.caydenfarris.net)
 
 Prerequisites: a Cloudflare account and `npx wrangler login`.
 
@@ -80,7 +80,7 @@ npm run d1:seed:remote      # applies cf-seed.sql (the cast, clues, reveals)
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" | npx wrangler secret put SESSION_SECRET
 ```
 
-`NEXT_PUBLIC_BASE_URL` is already set to `https://campushome.us` in `wrangler.jsonc`
+`NEXT_PUBLIC_BASE_URL` is already set to `https://deadinthewater.caydenfarris.net` in `wrangler.jsonc`
 (used to build the QR-code links).
 
 **4. Deploy:**
@@ -89,7 +89,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" | npx w
 npm run cf:deploy
 ```
 
-**5. Point the domain.** In the Cloudflare dashboard, add `campushome.us` as a custom
+**5. Point the domain.** In the Cloudflare dashboard, add `deadinthewater.caydenfarris.net` as a custom
 domain / route for the Worker.
 
 ### Local Cloudflare preview (optional)
