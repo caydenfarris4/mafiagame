@@ -28,13 +28,17 @@ type GmState = {
 
 const PHASE_NAMES = ["Arrival", "Discovery", "Suspicions", "Investigation", "Unmasking", "Architect", "Toast"];
 const ROLE_COLOR: Record<string, string> = {
-  KILLER: "text-accent",
-  ACCOMPLICE: "text-gold",
-  SINNER: "text-muted",
+  KILLER: "var(--blood)",
+  ACCOMPLICE: "var(--brass)",
+  SINNER: "var(--muted)",
 };
-
 const TABS = ["Run", "Clues", "Suspects"] as const;
 type Tab = (typeof TABS)[number];
+
+function avatarBg(color: string | null) {
+  const c = color ?? "#7a3338";
+  return `repeating-linear-gradient(135deg, ${c}, ${c} 4px, color-mix(in oklch, ${c}, black 25%) 4px, color-mix(in oklch, ${c}, black 25%) 8px)`;
+}
 
 export default function GmDashboard({ initial }: { initial: GmState }) {
   const [state, setState] = useState<GmState>(initial);
@@ -106,9 +110,7 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
 
   const tally = (r: number) => {
     const counts: Record<string, number> = {};
-    for (const v of state.votes.filter((v) => v.round === r)) {
-      counts[v.accusedName] = (counts[v.accusedName] ?? 0) + 1;
-    }
+    for (const v of state.votes.filter((v) => v.round === r)) counts[v.accusedName] = (counts[v.accusedName] ?? 0) + 1;
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   };
 
@@ -116,14 +118,16 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
   const solomon = state.library.filter((l) => l.kind === "SOLOMON");
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Phase stepper — always visible */}
-      <section className="rounded-2xl border border-border bg-surface p-4">
+    <div className="flex flex-col gap-4">
+      {/* Phase control — always visible */}
+      <div className="card-noir p-4">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs uppercase tracking-widest text-muted">
-            Current phase · {state.game.status.toLowerCase()}
+          <p className="eyebrow" style={{ color: "var(--brass)" }}>
+            Phase control · {state.game.status.toLowerCase()}
           </p>
-          <Link href="/gm/qr" className="text-xs font-semibold uppercase tracking-widest text-gold">QR codes →</Link>
+          <Link href="/gm/qr" className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan">
+            QR codes →
+          </Link>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {PHASE_NAMES.map((name, n) => (
@@ -131,25 +135,32 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
               key={n}
               onClick={() => setPhase(n)}
               disabled={busy === `phase-${n}`}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
-                n === cur ? "bg-accent text-white" : "border border-border bg-surface-2 text-muted hover:text-foreground"
-              }`}
+              className="px-2.5 py-1.5 font-mono text-[11px] transition disabled:opacity-50"
+              style={{
+                border: `1px solid ${n === cur ? "var(--cyan-soft)" : "var(--border)"}`,
+                background: n === cur ? "var(--cyan)" : "var(--surface)",
+                color: n === cur ? "var(--abyss)" : n < cur ? "var(--text-dim)" : "var(--muted)",
+              }}
             >
               {n}. {name}
             </button>
           ))}
         </div>
-        <p className="mt-3 text-sm text-muted">{state.phase.blurb}</p>
-      </section>
+        <p className="mt-3 text-sm text-text-dim" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+          {state.phase.blurb}
+        </p>
+      </div>
 
-      <nav className="flex gap-1 rounded-xl border border-border bg-surface p-1">
+      <nav className="card-noir flex gap-1 p-1">
         {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-              tab === t ? "bg-accent text-white" : "text-muted hover:text-foreground"
-            }`}
+            className="flex-1 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition"
+            style={{
+              color: tab === t ? "var(--abyss)" : "var(--muted)",
+              background: tab === t ? "var(--brass)" : "transparent",
+            }}
           >
             {t}
           </button>
@@ -157,21 +168,22 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
       </nav>
 
       {tab === "Run" && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           {/* Voting */}
-          <section className="rounded-2xl border border-border bg-surface p-4">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">Accusation ballots</h2>
+          <div className="card-noir p-4">
+            <p className="eyebrow mb-3" style={{ color: "var(--blood)" }}>
+              Accusation ballots
+            </p>
             <div className="flex flex-wrap gap-2">
               {[4, 5].map((r) => (
                 <button
                   key={r}
                   onClick={() => setVote(round === r ? null : r)}
                   disabled={busy === `vote-${r}`}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition disabled:opacity-50 ${
-                    round === r ? "bg-accent text-white" : "border border-border bg-surface-2 text-foreground hover:border-accent"
-                  }`}
+                  className="btn-ghost disabled:opacity-50"
+                  style={round === r ? { borderColor: "var(--blood)", color: "var(--blood)" } : undefined}
                 >
-                  {round === r ? `Close vote ${r}` : `Open vote ${r} (${r === 4 ? "killer" : "architect"})`}
+                  {round === r ? `Close vote ${r}` : `Open vote ${r} · ${r === 4 ? "killer" : "architect"}`}
                 </button>
               ))}
             </div>
@@ -180,37 +192,42 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
               if (t.length === 0) return null;
               return (
                 <div key={r} className="mt-3">
-                  <p className="text-[11px] uppercase tracking-wider text-muted">Vote {r} tally</p>
+                  <p className="eyebrow">Vote {r} tally</p>
                   <ul className="mt-1 flex flex-col gap-1">
                     {t.map(([name, n]) => (
                       <li key={name} className="flex justify-between text-sm">
                         <span className="text-foreground">{name}</span>
-                        <span className="font-semibold text-accent">{n}</span>
+                        <span className="font-mono text-blood">{n}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               );
             })}
-          </section>
+          </div>
 
           {/* Reveal library */}
-          <section className="rounded-2xl border border-border bg-surface p-4">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-muted">Scripted reveals</h2>
+          <div className="card-noir p-4">
+            <p className="eyebrow mb-3">Scripted reveals</p>
             <ul className="flex flex-col gap-2">
               {autoReveals.map((item) => (
-                <li key={item.id} className="rounded-lg border border-border bg-surface-2 p-3">
+                <li key={item.id} className="border border-border bg-surface p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                      <p className="mt-0.5 text-xs text-muted">{item.body}</p>
+                      <p className="text-sm font-medium text-foreground">{item.title}</p>
+                      <p className="mt-0.5 text-xs text-muted" style={{ fontFamily: "var(--font-display)" }}>
+                        {item.body}
+                      </p>
                     </div>
                     <button
                       onClick={() => toggleReveal(item)}
                       disabled={busy === `rev-${item.id}`}
-                      className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold uppercase tracking-wider transition disabled:opacity-50 ${
-                        item.isReleased ? "bg-gold/20 text-gold" : "bg-accent text-white hover:bg-accent-soft"
-                      }`}
+                      className="shrink-0 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] transition disabled:opacity-50"
+                      style={
+                        item.isReleased
+                          ? { background: "rgba(196,167,113,0.18)", color: "var(--brass)" }
+                          : { background: "var(--cyan)", color: "var(--abyss)" }
+                      }
                     >
                       {item.isReleased ? "Sent" : "Send"}
                     </button>
@@ -218,7 +235,9 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
                 </li>
               ))}
             </ul>
-            <h3 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-widest text-gold">🦜 Solomon lines</h3>
+            <p className="eyebrow mb-2 mt-4" style={{ color: "var(--brass)" }}>
+              🦜 Solomon lines
+            </p>
             <div className="flex flex-wrap gap-2">
               {solomon.map((item) => (
                 <button
@@ -226,38 +245,48 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
                   onClick={() => toggleReveal(item)}
                   disabled={busy === `rev-${item.id}`}
                   title={item.body}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs transition disabled:opacity-50 ${
-                    item.isReleased ? "bg-gold/20 text-gold" : "border border-border bg-surface-2 text-foreground hover:border-gold"
-                  }`}
+                  className="px-2.5 py-1.5 text-xs transition disabled:opacity-50"
+                  style={{
+                    border: `1px solid ${item.isReleased ? "var(--brass-dim)" : "var(--border)"}`,
+                    background: item.isReleased ? "rgba(196,167,113,0.12)" : "var(--surface)",
+                    color: item.isReleased ? "var(--brass)" : "var(--text)",
+                  }}
                 >
                   {item.body.length > 26 ? item.body.slice(0, 26) + "…" : item.body}
                 </button>
               ))}
             </div>
-          </section>
+          </div>
 
           {/* Live feed */}
-          <section className="rounded-2xl border border-border bg-surface p-4">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">Live discovery feed</h2>
+          <div className="card-noir p-4">
+            <p className="eyebrow mb-3" style={{ color: "var(--cyan)" }}>
+              Live discovery feed
+            </p>
             {state.discoveries.length === 0 ? (
               <p className="text-sm text-muted">No clues found yet.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {state.discoveries.slice(0, 40).map((d) => (
-                  <li key={d.id} className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 px-3 py-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: d.character.avatarColor ?? "#7a1020" }}>
+                  <li key={d.id} className="flex items-center gap-3 border border-border bg-surface px-3 py-2">
+                    <span
+                      className="flex h-8 w-8 shrink-0 items-center justify-center font-mono text-xs text-foreground"
+                      style={{ background: avatarBg(d.character.avatarColor) }}
+                    >
                       {d.character.personaName.charAt(0)}
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm">
-                        <span className="font-semibold">{d.character.personaName}</span>
+                        <span className="font-medium">{d.character.personaName}</span>
                         <span className="text-muted"> found </span>
-                        <span className="font-mono text-xs text-muted">{d.clue.code}</span>{" "}
-                        <span className="font-semibold">{d.clue.title}</span>
-                        {d.clue.tag === "ANNOUNCE" && <span className="ml-1 rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-accent">announce</span>}
-                        {d.shared && <span className="ml-1 text-[10px] uppercase tracking-wider text-gold">shared</span>}
+                        <span className="font-mono text-xs text-cyan">{d.clue.code}</span>{" "}
+                        <span className="font-medium">{d.clue.title}</span>
+                        {d.clue.tag === "ANNOUNCE" && (
+                          <span className="ml-1 font-mono text-[10px] uppercase tracking-wider text-cyan">· announce</span>
+                        )}
+                        {d.shared && <span className="ml-1 font-mono text-[10px] uppercase tracking-wider text-brass">· shared</span>}
                       </p>
-                      <p className="text-[11px] uppercase tracking-wider text-muted">
+                      <p className="font-mono text-[11px] uppercase tracking-wider text-muted">
                         {new Date(d.foundAt).toLocaleTimeString()} · {d.clue.location}
                       </p>
                     </div>
@@ -265,31 +294,38 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
                 ))}
               </ul>
             )}
-          </section>
+          </div>
         </div>
       )}
 
       {tab === "Clues" && (
-        <section className="rounded-2xl border border-border bg-surface p-4">
+        <div className="card-noir p-4">
           {[2, 3, 4, 5].map((p) => {
             const items = state.clues.filter((c) => c.phase === p);
             if (items.length === 0) return null;
             return (
               <div key={p} className="mb-4">
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold">Phase {p}</h3>
+                <p className="eyebrow mb-2" style={{ color: "var(--cyan)" }}>
+                  Phase {p}
+                </p>
                 <ul className="flex flex-col gap-2">
                   {items.map((c) => (
-                    <li key={c.id} className="rounded-lg border border-border bg-surface-2 px-3 py-2">
+                    <li key={c.id} className="border border-border bg-surface px-3 py-2">
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <p className="truncate text-sm">
                             <span className="font-mono text-xs text-muted">{c.code}</span>{" "}
-                            <span className="font-semibold">{c.title}</span>
-                            <span className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${c.tag === "ANNOUNCE" ? "bg-accent/20 text-accent" : "bg-gold/20 text-gold"}`}>{c.tag.toLowerCase()}</span>
+                            <span className="font-medium">{c.title}</span>
+                            <span
+                              className="ml-2 font-mono text-[10px] uppercase tracking-wider"
+                              style={{ color: c.tag === "ANNOUNCE" ? "var(--cyan)" : "var(--brass)" }}
+                            >
+                              {c.tag.toLowerCase()}
+                            </span>
                           </p>
                           <p className="text-[11px] text-muted">{c.location}</p>
                         </div>
-                        <span className="shrink-0 text-xs text-muted">{c.found} found</span>
+                        <span className="shrink-0 font-mono text-xs text-muted">{c.found} found</span>
                       </div>
                     </li>
                   ))}
@@ -297,27 +333,30 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
               </div>
             );
           })}
-        </section>
+        </div>
       )}
 
       {tab === "Suspects" && (
-        <section className="rounded-2xl border border-border bg-surface p-4">
+        <div className="card-noir p-4">
           <ul className="flex flex-col gap-2">
             {state.characters.map((c) => (
-              <li key={c.id} className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 px-3 py-2">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: c.avatarColor ?? "#7a1020" }}>
+              <li key={c.id} className="flex items-center gap-3 border border-border bg-surface px-3 py-2">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center font-mono text-xs text-foreground"
+                  style={{ background: avatarBg(c.avatarColor) }}
+                >
                   {c.personaName.charAt(0)}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{c.personaName}</p>
-                  <p className="text-[11px] uppercase tracking-wider text-muted">
-                    {c.realName} · <span className={ROLE_COLOR[c.role] ?? "text-muted"}>{c.role.toLowerCase()}</span> · {c.found} clues
+                  <p className="truncate text-sm font-medium">{c.personaName}</p>
+                  <p className="font-mono text-[11px] uppercase tracking-wider text-muted">
+                    {c.realName} · <span style={{ color: ROLE_COLOR[c.role] ?? "var(--muted)" }}>{c.role.toLowerCase()}</span> · {c.found} clues
                   </p>
                 </div>
               </li>
             ))}
           </ul>
-        </section>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Bracketed } from "@/components/Atmosphere";
 
 type Section = { heading: string; body: string };
 type Clue = { id: string; code: string; title: string; content: string; tag: string };
@@ -31,16 +32,25 @@ type Props = {
   initial: PlayState;
 };
 
-const TABS = ["Dossier", "Last Night", "This Phase", "My Clues", "Feed"] as const;
+const TABS = ["Dossier", "Last Night", "This Phase", "Clues", "Feed"] as const;
 type Tab = (typeof TABS)[number];
+
+const PHASE_TRACK = ["Arrival", "Discovery", "Suspicions", "Investigation", "Unmasking", "Architect", "Toast"];
 
 function Sections({ sections }: { sections: Section[] }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {sections.map((s, i) => (
         <div key={i}>
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-gold">{s.heading}</h3>
-          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{s.body}</p>
+          <h3 className="eyebrow" style={{ color: "var(--cyan)" }}>
+            {s.heading}
+          </h3>
+          <p
+            className="mt-1.5 whitespace-pre-wrap leading-relaxed text-text-dim"
+            style={{ fontFamily: "var(--font-display)", fontSize: 15 }}
+          >
+            {s.body}
+          </p>
         </div>
       ))}
     </div>
@@ -96,48 +106,53 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
   const round = state.game.activeVoteRound;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {round && (
-        <div className="rounded-xl border border-accent bg-accent/10 p-4">
-          <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-            {round === 4 ? "Vote: who killed Richard?" : "Vote: who was the architect?"}
-          </p>
-          <p className="mt-1 text-xs text-muted">
-            {state.myVote ? `Your ballot: ${state.myVote.accusedName}. You can change it.` : "Cast your ballot."}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {state.candidates.map((c) => (
-              <button
-                key={c}
-                onClick={() => castVote(c)}
-                className={`rounded-lg px-3 py-1.5 text-sm transition ${
-                  state.myVote?.accusedName === c
-                    ? "bg-accent text-white"
-                    : "border border-border bg-surface-2 text-foreground hover:border-accent"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+        <Bracketed>
+          <div className="card-noir p-4" style={{ background: "rgba(168,71,79,0.08)", borderColor: "var(--blood-dim)" }}>
+            <p className="eyebrow" style={{ color: "var(--blood)" }}>
+              {round === 4 ? "Vote · Who killed Richard?" : "Vote · Who was the architect?"}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              {state.myVote ? `Your ballot: ${state.myVote.accusedName}. You can change it.` : "Anonymous until the reveal."}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {state.candidates.map((c) => {
+                const picked = state.myVote?.accusedName === c;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => castVote(c)}
+                    className="px-3 py-1.5 text-sm transition"
+                    style={{
+                      border: `1px solid ${picked ? "var(--blood)" : "var(--border)"}`,
+                      background: picked ? "rgba(168,71,79,0.18)" : "var(--surface)",
+                      color: picked ? "#f0d9d9" : "var(--text)",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </Bracketed>
       )}
 
-      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1">
+      <nav className="card-noir flex gap-1 overflow-x-auto p-1">
         {TABS.map((t) => {
           const badge =
-            t === "My Clues"
-              ? state.discoveries.length
-              : t === "Feed"
-                ? state.announcements.length
-                : null;
+            t === "Clues" ? state.discoveries.length : t === "Feed" ? state.announcements.length : null;
           return (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-                tab === t ? "bg-accent text-white" : "text-muted hover:text-foreground"
-              }`}
+              className="flex-1 whitespace-nowrap px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition"
+              style={{
+                color: tab === t ? "var(--abyss)" : "var(--muted)",
+                background: tab === t ? "var(--cyan)" : "transparent",
+              }}
             >
               {t}
               {badge ? <span className="ml-1 opacity-70">{badge}</span> : null}
@@ -146,116 +161,154 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
         })}
       </nav>
 
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        {tab === "Dossier" && (
-          <div className="flex flex-col gap-4">
-            <Sections sections={sheet} />
-            {prop && (
-              <div className="rounded-lg border border-border bg-surface-2 p-3">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-gold">Your prop</h3>
-                <p className="mt-1 text-sm text-foreground">{prop}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab === "Last Night" && (
-          <div>
-            <h2 className="mb-3 text-lg font-bold">The Last Night</h2>
-            <Sections sections={lastNight} />
-          </div>
-        )}
-
-        {tab === "This Phase" && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted">
-                Phase {state.phase.n}
-                {state.phase.durationMin ? ` · ~${state.phase.durationMin} min` : ""}
-              </p>
-              <h2 className="text-xl font-bold">{state.phase.name}</h2>
-              <p className="mt-1 text-sm text-muted">{state.phase.blurb}</p>
+      {tab === "Dossier" && (
+        <div className="card-noir flex flex-col gap-5 p-5">
+          <p className="eyebrow">Character file · confidential</p>
+          <Sections sections={sheet} />
+          {prop && (
+            <div className="border border-border bg-surface p-3">
+              <h3 className="eyebrow" style={{ color: "var(--cyan)" }}>
+                Your prop
+              </h3>
+              <p className="mt-1 text-sm text-foreground">{prop}</p>
             </div>
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-gold">Open to search</h3>
-              <ul className="mt-1 flex flex-wrap gap-2">
-                {state.phase.open.map((r) => (
-                  <li key={r} className="rounded-full bg-surface-2 px-3 py-1 text-sm text-foreground">{r}</li>
-                ))}
-              </ul>
+          )}
+        </div>
+      )}
+
+      {tab === "Last Night" && (
+        <div className="card-noir p-5">
+          <p className="eyebrow">Alexander&apos;s reconstruction</p>
+          <h2 className="display mt-1 mb-4 text-2xl text-foreground">The Last Night</h2>
+          <Sections sections={lastNight} />
+        </div>
+      )}
+
+      {tab === "This Phase" && (
+        <div className="card-noir flex flex-col gap-5 p-5">
+          <div>
+            <p className="eyebrow" style={{ color: "var(--cyan)" }}>
+              Phase {state.phase.n}
+              {state.phase.durationMin ? ` · ~${state.phase.durationMin} min` : ""}
+            </p>
+            <h2 className="display mt-1 text-2xl text-foreground">{state.phase.name}</h2>
+            <div className="prog-track mt-3">
+              {PHASE_TRACK.map((_, i) => (
+                <div key={i} className={`prog-cell ${i <= state.phase.n ? "done" : ""}`} />
+              ))}
             </div>
-            {state.phase.locked.length > 0 && (
-              <div>
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">Still locked</h3>
-                <ul className="mt-1 flex flex-wrap gap-2">
-                  {state.phase.locked.map((r) => (
-                    <li key={r} className="rounded-full border border-border px-3 py-1 text-sm text-muted">{r}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <p className="mt-3 text-sm text-text-dim" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+              {state.phase.blurb}
+            </p>
           </div>
-        )}
-
-        {tab === "My Clues" && (
           <div>
-            <h2 className="mb-3 text-lg font-bold">Your clues ({state.discoveries.length})</h2>
-            {state.discoveries.length === 0 ? (
-              <p className="text-sm text-muted">
-                Nothing yet. Explore the open rooms and scan the QR codes you find.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {state.discoveries.map((d) => {
-                  const keep = d.clue.tag === "KEEP";
-                  return (
-                    <li key={d.id} className="rounded-xl border border-border bg-surface-2 p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded bg-surface px-2 py-0.5 font-mono text-xs text-muted">{d.clue.code}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${keep ? "bg-gold/20 text-gold" : "bg-accent/20 text-accent"}`}>
-                          {keep ? "Keep" : "Announce"}
-                        </span>
-                        {d.shared && <span className="text-[10px] uppercase tracking-wider text-muted">shared</span>}
-                      </div>
-                      <h3 className="mt-1 font-semibold text-foreground">{d.clue.title}</h3>
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{d.clue.content}</p>
-                      {keep && !d.shared && (
-                        <button
-                          onClick={() => share(d.clue.id)}
-                          disabled={sharing === d.clue.id}
-                          className="mt-3 rounded-lg bg-gold/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gold transition hover:bg-gold/30 disabled:opacity-50"
-                        >
-                          {sharing === d.clue.id ? "Sharing…" : "Share with the house"}
-                        </button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            <h3 className="eyebrow" style={{ color: "var(--cyan)" }}>
+              Open to search
+            </h3>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {state.phase.open.map((r) => (
+                <li key={r} className="border border-border bg-surface px-3 py-1 text-sm text-foreground">
+                  {r}
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
-
-        {tab === "Feed" && (
-          <div>
-            <h2 className="mb-3 text-lg font-bold">The house feed</h2>
-            {state.announcements.length === 0 ? (
-              <p className="text-sm text-muted">Nothing has been announced to the house yet.</p>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {state.announcements.map((a) => (
-                  <li key={a.id} className={`rounded-xl border p-4 ${a.kind === "SOLOMON" ? "border-gold/50 bg-gold/5" : "border-border bg-surface-2"}`}>
-                    <h3 className={`font-semibold ${a.kind === "SOLOMON" ? "text-gold" : "text-foreground"}`}>
-                      {a.kind === "SOLOMON" ? "🦜 Solomon" : a.title}
-                    </h3>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{a.body}</p>
+          {state.phase.locked.length > 0 && (
+            <div>
+              <h3 className="eyebrow">Still locked</h3>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {state.phase.locked.map((r) => (
+                  <li key={r} className="border border-dashed border-border px-3 py-1 text-sm text-muted">
+                    {r}
                   </li>
                 ))}
               </ul>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "Clues" && (
+        <div>
+          <p className="eyebrow mb-3">Evidence log · {state.discoveries.length} collected</p>
+          {state.discoveries.length === 0 ? (
+            <p className="text-sm text-muted" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+              Nothing yet. Explore the open rooms and scan the QR tags you find.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {state.discoveries.map((d) => {
+                const keep = d.clue.tag === "KEEP";
+                return (
+                  <li key={d.id} className="card-noir p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs tracking-[0.16em] text-cyan">CLUE {d.clue.code}</span>
+                      <span className={`pill ${keep ? "pill-brass" : "pill-live"}`} style={{ marginLeft: "auto" }}>
+                        {keep ? "Keep" : "Announce"}
+                      </span>
+                    </div>
+                    <h3 className="display mt-1 text-lg text-foreground">{d.clue.title}</h3>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-text-dim" style={{ fontFamily: "var(--font-display)" }}>
+                      {d.clue.content}
+                    </p>
+                    {keep &&
+                      (d.shared ? (
+                        <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+                          ◆ Shared with the house
+                        </p>
+                      ) : (
+                        <button
+                          onClick={() => share(d.clue.id)}
+                          disabled={sharing === d.clue.id}
+                          className="btn-ghost btn-brass mt-3"
+                        >
+                          {sharing === d.clue.id ? "Sharing…" : "Share with the house"}
+                        </button>
+                      ))}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {tab === "Feed" && (
+        <div>
+          <p className="eyebrow mb-3">The house feed</p>
+          {state.announcements.length === 0 ? (
+            <p className="text-sm text-muted" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+              Nothing has been announced to the house yet.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {state.announcements.map((a) => {
+                const solomon = a.kind === "SOLOMON";
+                return (
+                  <li
+                    key={a.id}
+                    className="card-noir p-4"
+                    style={solomon ? { borderColor: "var(--brass-dim)", background: "rgba(196,167,113,0.05)" } : undefined}
+                  >
+                    <h3
+                      className="font-mono text-[11px] uppercase tracking-[0.18em]"
+                      style={{ color: solomon ? "var(--brass)" : "var(--cyan)" }}
+                    >
+                      {solomon ? "🦜 Solomon" : a.title}
+                    </h3>
+                    <p
+                      className="mt-1.5 whitespace-pre-wrap text-foreground"
+                      style={{ fontFamily: "var(--font-display)", fontSize: 15, fontStyle: solomon ? "italic" : "normal" }}
+                    >
+                      {a.body}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

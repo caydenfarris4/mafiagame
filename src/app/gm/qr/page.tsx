@@ -40,43 +40,49 @@ export default async function QrSheetPage() {
   const phases = [2, 3, 4, 5];
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 p-5">
-      <header className="mb-6 flex items-center justify-between gap-4 border-b border-border pb-4 print:hidden">
-        <div>
-          <Link href="/gm" className="text-xs uppercase tracking-widest text-muted hover:text-foreground">← Dashboard</Link>
-          <h1 className="mt-1 text-2xl font-bold">Clue QR codes</h1>
-          <p className="text-sm text-muted">
-            Print, cut out, and hide each in its location. Links resolve to{" "}
-            <code className="text-foreground">{baseUrl}/clue/…</code>
-          </p>
-        </div>
-        <PrintButton />
-      </header>
+    <main className="min-h-dvh bg-abyss">
+      <div className="mx-auto w-full max-w-5xl p-5">
+        <header className="mb-6 flex items-center justify-between gap-4 border-b border-border pb-4 print:hidden">
+          <div>
+            <Link href="/gm" className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted hover:text-foreground">
+              ← Director&apos;s View
+            </Link>
+            <h1 className="display mt-1 text-2xl text-foreground">Clue QR codes</h1>
+            <p className="text-sm text-text-dim" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+              Print, cut out, and hide each in its location. Links resolve to{" "}
+              <code className="font-mono text-foreground">{baseUrl}/clue/…</code>
+            </p>
+          </div>
+          <PrintButton />
+        </header>
 
-      {phases.map((p) => {
-        const inPhase = cards.filter((c) => c.clue.phase === p);
-        if (inPhase.length === 0) return null;
-        return (
-          <section key={p} className="mb-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-gold print:text-black">
-              Phase {p}
-            </h2>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {inPhase.map(({ clue, qr }) => (
-                <div key={clue.id} className="flex flex-col items-center rounded-xl border border-border bg-white p-4 text-center text-black">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={qr} alt={`QR for clue ${clue.code}`} className="w-36" />
-                  <p className="mt-2 font-mono text-xs text-gray-500">
-                    {clue.code} · {clue.tag}
-                  </p>
-                  <h3 className="font-bold leading-tight">{clue.title}</h3>
-                  <p className="mt-1 text-xs text-gray-600">{clue.location}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+        {phases.map((p) => {
+          const inPhase = cards.filter((c) => c.clue.phase === p);
+          if (inPhase.length === 0) return null;
+          return (
+            <section key={p} className="mb-8">
+              <p className="eyebrow mb-3 print:text-black" style={{ color: "var(--cyan)" }}>
+                Phase {p}
+              </p>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {inPhase.map(({ clue, qr }) => (
+                  <div key={clue.id} className="flex flex-col items-center border border-border bg-white p-4 text-center text-black">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={qr} alt={`QR for clue ${clue.code}`} className="w-36" />
+                    <p className="mt-2 font-mono text-xs text-gray-500">
+                      {clue.code} · {clue.tag}
+                    </p>
+                    <h2 className="font-semibold leading-tight" style={{ fontFamily: "var(--font-display)" }}>
+                      {clue.title}
+                    </h2>
+                    <p className="mt-1 text-xs text-gray-600">{clue.location}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </main>
   );
 }

@@ -11,17 +11,10 @@ export default async function CluePage({
 }) {
   const { token } = await params;
 
-  // Must be logged in to record the discovery. Send them to login, then back here.
   const character = await getCurrentCharacter();
   if (!character) {
     redirect(`/?next=${encodeURIComponent(`/clue/${token}`)}`);
   }
 
-  return (
-    <main className="flex flex-1 items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <ClueReveal token={token} />
-      </div>
-    </main>
-  );
+  return <ClueReveal token={token} />;
 }
