@@ -68,8 +68,8 @@ export async function POST(
     title: clue.title,
     content: clue.content,
     tag: clue.tag,
-    // The photo lives at public/clues/<code>.png; it hides itself if not present.
-    image: `/clues/${clue.code}.png`,
+    // The photo lives at public/clues/<code>.webp; it hides itself if not present.
+    image: `/clues/${clue.code}.webp`,
     alreadyFound: Boolean(existing),
   });
 }

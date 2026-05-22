@@ -63,7 +63,7 @@ export async function GET() {
         title: d.clue.title,
         content: d.clue.content,
         tag: d.clue.tag,
-        image: `/clues/${d.clue.code}.png`,
+        image: `/clues/${d.clue.code}.webp`,
       },
     })),
     announcements: announcements.map((a) => ({
