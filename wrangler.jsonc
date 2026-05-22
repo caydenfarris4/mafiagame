@@ -33,8 +33,10 @@
     "NEXT_PUBLIC_BASE_URL": "https://deadinthewater.caydenfarris.net",
     // Countries (ISO-2, comma-separated) allowed to log in. A login from any
     // other known country is blocked, keeping bots that scrape the public URL
-    // out of the game. Set this to wherever the party is held.
-    "ALLOWED_COUNTRIES": "US",
+    // out of the game. Set this to wherever the party is held — US + CA here,
+    // since the lake house is in northern Washington near the Canadian border
+    // (border-area carriers sometimes geolocate a US phone as CA, or vice versa).
+    "ALLOWED_COUNTRIES": "US,CA",
     // Cookie signing key. Fine to keep here for a private repo / one-weekend
     // party game. To harden later: remove this line and instead run
     //   npx wrangler secret put SESSION_SECRET
