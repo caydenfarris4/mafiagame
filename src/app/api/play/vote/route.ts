@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
-import { getCurrentCharacter } from "@/lib/auth";
+import { requireApprovedPlayer } from "@/lib/auth";
 
 // A player casts (or changes) their accusation ballot for the open vote round.
 export async function POST(request: Request) {
-  const character = await getCurrentCharacter();
-  if (!character) {
-    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
-  }
-  if (character.isGameMaster) {
-    return NextResponse.json({ error: "The game master doesn't vote." }, { status: 403 });
-  }
+  const gate = await requireApprovedPlayer();
+  if (gate.error) return gate.error;
+  const character = gate.character;
 
   const round = character.game.activeVoteRound;
   if (!round) {

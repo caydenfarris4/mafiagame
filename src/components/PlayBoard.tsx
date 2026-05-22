@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bracketed } from "@/components/Atmosphere";
 import ClueScanner from "@/components/ClueScanner";
 
@@ -59,6 +60,7 @@ function Sections({ sections }: { sections: Section[] }) {
 }
 
 export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("Dossier");
   const [state, setState] = useState<PlayState>(initial);
   const [sharing, setSharing] = useState<string | null>(null);
@@ -66,11 +68,16 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/play/state", { cache: "no-store" });
-      if (res.ok) setState(await res.json());
+      if (res.ok) {
+        setState(await res.json());
+      } else if (res.status === 403) {
+        // Host revoked this device mid-game — fall back to the holding screen.
+        router.refresh();
+      }
     } catch {
       /* ignore transient errors */
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const kick = setTimeout(refresh, 0);

@@ -26,6 +26,7 @@ export default async function GmPage() {
     characters: [],
     library: [],
     votes: [],
+    sessions: [],
   };
 
   return (
