@@ -489,7 +489,15 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{c.personaName}</p>
                   <p className="font-mono text-[11px] uppercase tracking-wider text-muted">
-                    {c.realName} · <span style={{ color: ROLE_COLOR[c.role] ?? "var(--muted)" }}>{c.role.toLowerCase()}</span> · {c.found} clues
+                    {c.realName}
+                    {c.role !== "SINNER" && (
+                      <>
+                        {" · "}
+                        <span style={{ color: ROLE_COLOR[c.role] ?? "var(--muted)" }}>{c.role.toLowerCase()}</span>
+                      </>
+                    )}
+                    {" · "}
+                    {c.found} clues
                   </p>
                 </div>
                 <button
