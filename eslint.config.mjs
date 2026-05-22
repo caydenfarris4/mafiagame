@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "src/generated/**",
     ".open-next/**",
     ".wrangler/**",
+    // Build-time tooling, not shipped app code.
+    "scripts/**",
   ]),
 ]);
 

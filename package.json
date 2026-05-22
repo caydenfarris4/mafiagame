@@ -19,7 +19,8 @@
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "d1:seed:local": "wrangler d1 execute DB --local --file=cf-seed.sql",
-    "d1:seed:remote": "wrangler d1 execute DB --remote --file=cf-seed.sql"
+    "d1:seed:remote": "wrangler d1 execute DB --remote --file=cf-seed.sql",
+    "gen:qr-pdf": "node --experimental-sqlite scripts/gen-qr-pdf.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -46,6 +47,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "pdf-lib": "^1.17.1",
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
     "typescript": "^5",

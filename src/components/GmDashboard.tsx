@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 
 type PhaseInfo = { n: number; name: string; durationMin: number | null; blurb: string; open: string[]; locked: string[] };
 type Discovery = {
@@ -221,9 +220,14 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
           <p className="eyebrow" style={{ color: "var(--brass)" }}>
             Phase control · {state.game.status.toLowerCase()}
           </p>
-          <Link href="/gm/qr" className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan">
-            QR codes →
-          </Link>
+          <a
+            href="/clue-qr-codes.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan"
+          >
+            QR codes (PDF) ↗
+          </a>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {PHASE_NAMES.map((name, n) => (
