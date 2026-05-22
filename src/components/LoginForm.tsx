@@ -93,7 +93,7 @@ export default function LoginForm({ next }: { next?: string }) {
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden" style={{ background: "#000" }}>
-      <DropLayer intensity={4} puddleHeight={PUDDLE} showPuddle />
+      <DropLayer intensity={8} puddleHeight={PUDDLE} showPuddle />
       <div className="fog" />
       <Puddle height={PUDDLE} />
       <div className="vignette" />
