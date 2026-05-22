@@ -18,7 +18,7 @@ export async function GET() {
       where: { characterId: character.id },
       orderBy: { foundAt: "desc" },
       include: {
-        clue: { select: { id: true, token: true, title: true, content: true, tag: true } },
+        clue: { select: { id: true, token: true, code: true, phase: true, title: true, content: true, tag: true } },
       },
     }),
     prisma.announcement.findMany({
@@ -63,6 +63,7 @@ export async function GET() {
         title: d.clue.title,
         content: d.clue.content,
         tag: d.clue.tag,
+        image: d.clue.phase === 2 || d.clue.phase === 3 ? `/clues/${d.clue.code}.png` : null,
       },
     })),
     announcements: announcements.map((a) => ({

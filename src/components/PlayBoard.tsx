@@ -6,7 +6,7 @@ import { Bracketed } from "@/components/Atmosphere";
 import ClueScanner from "@/components/ClueScanner";
 
 type Section = { heading: string; body: string };
-type Clue = { id: string; code: string; title: string; content: string; tag: string };
+type Clue = { id: string; code: string; title: string; content: string; tag: string; image: string | null };
 type Discovery = { id: string; shared: boolean; foundAt: string; clue: Clue };
 type Announcement = { id: string; kind: string; title: string; body: string; releasedAt: string };
 type PhaseInfo = {
@@ -266,6 +266,17 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
                       </span>
                     </div>
                     <h3 className="display mt-1 text-lg text-foreground">{d.clue.title}</h3>
+                    {d.clue.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={d.clue.image}
+                        alt={d.clue.title}
+                        className="mt-2 w-full border border-border"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    )}
                     <p className="mt-1 whitespace-pre-wrap text-sm text-text-dim" style={{ fontFamily: "var(--font-display)" }}>
                       {d.clue.content}
                     </p>

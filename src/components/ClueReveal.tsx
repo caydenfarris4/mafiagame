@@ -9,6 +9,7 @@ type Revealed = {
   title: string;
   content: string;
   tag: string;
+  image: string | null;
   alreadyFound: boolean;
 };
 
@@ -74,6 +75,17 @@ export default function ClueReveal({ token }: { token: string }) {
                 </span>
               </div>
               <h1 className="display mt-3 text-3xl leading-tight text-foreground">{clue.title}</h1>
+              {clue.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={clue.image}
+                  alt={clue.title}
+                  className="mt-4 w-full border border-border"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              )}
               <p
                 className="mt-4 whitespace-pre-wrap leading-relaxed text-text-dim"
                 style={{ fontFamily: "var(--font-display)", fontSize: 15 }}
