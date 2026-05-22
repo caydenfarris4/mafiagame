@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Bracketed } from "@/components/Atmosphere";
+import ClueScanner from "@/components/ClueScanner";
 
 type Section = { heading: string; body: string };
 type Clue = { id: string; code: string; title: string; content: string; tag: string };
@@ -32,7 +33,7 @@ type Props = {
   initial: PlayState;
 };
 
-const TABS = ["Dossier", "Last Night", "This Phase", "Clues", "Feed"] as const;
+const TABS = ["Scan", "Dossier", "Last Night", "This Phase", "Clues", "Feed"] as const;
 type Tab = (typeof TABS)[number];
 
 const PHASE_TRACK = ["Arrival", "Discovery", "Suspicions", "Investigation", "Unmasking", "Architect", "Toast"];
@@ -160,6 +161,16 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
           );
         })}
       </nav>
+
+      {tab === "Scan" && (
+        <div className="flex flex-col gap-3">
+          <p className="eyebrow">Find a clue tag · scan it</p>
+          <ClueScanner />
+          <p className="text-center text-xs text-muted" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+            Point your camera at a clue&apos;s QR tag. Camera blocked? Enter the code printed on the tag.
+          </p>
+        </div>
+      )}
 
       {tab === "Dossier" && (
         <div className="card-noir flex flex-col gap-5 p-5">
