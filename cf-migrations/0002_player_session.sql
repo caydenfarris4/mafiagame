@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "PlayerSession" (
+CREATE TABLE IF NOT EXISTS "PlayerSession" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "gameId" TEXT NOT NULL,
     "characterId" TEXT NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE "PlayerSession" (
 );
 
 -- CreateIndex
-CREATE INDEX "PlayerSession_gameId_idx" ON "PlayerSession"("gameId");
+CREATE INDEX IF NOT EXISTS "PlayerSession_gameId_idx" ON "PlayerSession"("gameId");
 
 -- CreateIndex
-CREATE INDEX "PlayerSession_characterId_idx" ON "PlayerSession"("characterId");
+CREATE INDEX IF NOT EXISTS "PlayerSession_characterId_idx" ON "PlayerSession"("characterId");
