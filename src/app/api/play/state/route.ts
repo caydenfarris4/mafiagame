@@ -63,7 +63,7 @@ export async function GET() {
         title: d.clue.title,
         content: d.clue.content,
         tag: d.clue.tag,
-        image: d.clue.phase === 2 || d.clue.phase === 3 ? `/clues/${d.clue.code}.png` : null,
+        image: `/clues/${d.clue.code}.png`,
       },
     })),
     announcements: announcements.map((a) => ({

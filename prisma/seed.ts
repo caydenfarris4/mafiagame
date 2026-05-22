@@ -211,7 +211,7 @@ const clues = [
   { code: "4-2", phase: 4, tag: "KEEP", title: "A scrap: “11:35 — go”", location: "Same blazer pocket as 4-1, folded behind the envelope.", content: "A scrap tucked behind the envelope: “11:35 — go.” That's Vivi's handwriting." },
   { code: "4-3", phase: 4, tag: "ANNOUNCE", title: "Opera binoculars", location: "Primary suite balcony — propped between the loveseat cushions.", content: "Opera binoculars on the balcony loveseat. The lens is still warm. Someone stood up here, watching the dock." },
   { code: "4-4", phase: 4, tag: "KEEP", title: "A sticky note", location: "Master bathroom of the primary suite — in the trash, under tissues.", content: "A sticky note, balled up in the trash. Smoothed out, it reads: “breathe. it's done.” Done… what?" },
-  { code: "4-5", phase: 4, tag: "KEEP", title: "The 11:35 bonfire photo", location: "Bottom floor — under the rim of the ping pong table, kitchen-side.", content: "The bonfire photo, stamped 11:35. Everyone's gathered, mid-laugh. Everyone but Sebastian." },
+  { code: "4-5", phase: 4, tag: "KEEP", title: "The 11:35 bonfire photo", location: "Bottom floor — under the rim of the ping pong table, kitchen-side.", content: "Something seems off…" },
   // Phase 5
   { code: "5-1", phase: 5, tag: "ANNOUNCE", title: "Vivi's draft letter", location: "Vivi's overnight bag (retrieved in Phase 5 when Hank authorizes the search).", content: "A letter in Vivi's hand, never sent. “Then I'll have to find another way.” …another way." },
 ];

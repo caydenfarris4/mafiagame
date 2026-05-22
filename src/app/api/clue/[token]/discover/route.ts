@@ -68,8 +68,8 @@ export async function POST(
     title: clue.title,
     content: clue.content,
     tag: clue.tag,
-    // Phase 2 & 3 clues have a photo at public/clues/<code>.png.
-    image: clue.phase === 2 || clue.phase === 3 ? `/clues/${clue.code}.png` : null,
+    // The photo lives at public/clues/<code>.png; it hides itself if not present.
+    image: `/clues/${clue.code}.png`,
     alreadyFound: Boolean(existing),
   });
 }
