@@ -99,6 +99,7 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
   const [tab, setTab] = useState<Tab>("Run");
   const [busy, setBusy] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   async function copyCode(code: string) {
     try {
@@ -179,6 +180,17 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
         body: JSON.stringify({ round }),
       });
       await refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function resetGame() {
+    setBusy("reset");
+    try {
+      await fetch("/api/gm/reset", { method: "POST" });
+      await refresh();
+      setConfirmReset(false);
     } finally {
       setBusy(null);
     }
@@ -385,6 +397,35 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+
+          {/* Reset game */}
+          <div className="card-noir p-4">
+            <p className="eyebrow" style={{ color: "var(--blood)" }}>
+              Danger zone
+            </p>
+            <p className="mb-3 mt-1 text-sm text-text-dim" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+              Reset clears every found clue, vote, and sent reveal and returns the game to Phase 0. The cast, the clue
+              tags, and admitted devices stay — so the same group can play again.
+            </p>
+            {confirmReset ? (
+              <div className="flex gap-2">
+                <button onClick={resetGame} disabled={busy === "reset"} className="btn-primary btn-danger flex-1">
+                  {busy === "reset" ? "Resetting…" : "Yes — reset the game"}
+                </button>
+                <button onClick={() => setConfirmReset(false)} className="btn-ghost">
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmReset(true)}
+                className="btn-ghost"
+                style={{ borderColor: "var(--blood-dim)", color: "var(--blood)" }}
+              >
+                Reset game
+              </button>
             )}
           </div>
         </div>
