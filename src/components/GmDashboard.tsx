@@ -12,7 +12,7 @@ type Discovery = {
   clue: { id: string; code: string; title: string; tag: string; location: string; phase: number };
 };
 type Clue = { id: string; code: string; title: string; tag: string; phase: number; location: string; found: number };
-type Character = { id: string; personaName: string; realName: string; role: string; avatarColor: string | null; found: number };
+type Character = { id: string; personaName: string; realName: string; role: string; loginCode: string; avatarColor: string | null; found: number };
 type LibraryItem = { id: string; kind: string; phase: number; title: string; body: string; isReleased: boolean };
 type VoteRow = { round: number; accusedName: string; voter: string };
 
@@ -44,6 +44,17 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
   const [state, setState] = useState<GmState>(initial);
   const [tab, setTab] = useState<Tab>("Run");
   const [busy, setBusy] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  async function copyCode(code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(code);
+      setTimeout(() => setCopied(null), 1200);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
 
   const refresh = useCallback(async () => {
     try {
@@ -338,6 +349,12 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
 
       {tab === "Suspects" && (
         <div className="card-noir p-4">
+          <p className="eyebrow" style={{ color: "var(--brass)" }}>
+            Cast &amp; codes · hand each guest their code
+          </p>
+          <p className="mb-3 mt-1 text-sm text-text-dim" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+            Each person signs in at the home screen with their own code. Tap a code to copy it.
+          </p>
           <ul className="flex flex-col gap-2">
             {state.characters.map((c) => (
               <li key={c.id} className="flex items-center gap-3 border border-border bg-surface px-3 py-2">
@@ -353,6 +370,13 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
                     {c.realName} · <span style={{ color: ROLE_COLOR[c.role] ?? "var(--muted)" }}>{c.role.toLowerCase()}</span> · {c.found} clues
                   </p>
                 </div>
+                <button
+                  onClick={() => copyCode(c.loginCode)}
+                  title="Copy code"
+                  className="shrink-0 border border-border px-2.5 py-1 font-mono text-xs tracking-[0.12em] text-cyan transition hover:border-cyan-soft"
+                >
+                  {copied === c.loginCode ? "✓ copied" : c.loginCode}
+                </button>
               </li>
             ))}
           </ul>

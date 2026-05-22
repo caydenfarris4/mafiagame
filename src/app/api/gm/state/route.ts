@@ -68,6 +68,7 @@ export async function GET() {
       personaName: c.personaName,
       realName: c.realName,
       role: c.role,
+      loginCode: c.loginCode,
       avatarColor: c.avatarColor,
       found: c._count.discoveries,
     })),
