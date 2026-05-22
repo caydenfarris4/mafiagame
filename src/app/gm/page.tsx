@@ -3,6 +3,7 @@ import { getCurrentCharacter } from "@/lib/auth";
 import { getPhase } from "@/lib/gameContent";
 import LogoutButton from "@/components/LogoutButton";
 import GmDashboard from "@/components/GmDashboard";
+import { Atmosphere } from "@/components/Atmosphere";
 
 export const dynamic = "force-dynamic";
 
@@ -28,16 +29,21 @@ export default async function GmPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 p-5">
-      <header className="mb-5 flex items-center justify-between gap-4 border-b border-border pb-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-gold">Game Master · Alexander</p>
-          <h1 className="text-2xl font-bold">{game.name}</h1>
-        </div>
-        <LogoutButton />
-      </header>
+    <main className="relative min-h-dvh overflow-hidden bg-abyss">
+      <Atmosphere intensity={1} tide />
+      <div className="relative z-[2] mx-auto w-full max-w-3xl p-5">
+        <header className="mb-5 flex items-center justify-between gap-4 border-b border-border pb-4">
+          <div>
+            <p className="eyebrow" style={{ color: "var(--brass)" }}>
+              Game Master · Alexander
+            </p>
+            <h1 className="display text-2xl text-foreground">Director&apos;s View</h1>
+          </div>
+          <LogoutButton />
+        </header>
 
-      <GmDashboard initial={initial} />
+        <GmDashboard initial={initial} />
+      </div>
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Atmosphere, Bracketed } from "@/components/Atmosphere";
 
 type Revealed = {
   code: string;
@@ -38,63 +39,74 @@ export default function ClueReveal({ token }: { token: string }) {
     };
   }, [token]);
 
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-accent-soft bg-surface p-6 text-center">
-        <p className="text-foreground">{error}</p>
-        <Link href="/play" className="mt-4 inline-block text-sm uppercase tracking-widest text-gold">
-          Back to your dossier
-        </Link>
-      </div>
-    );
-  }
-
-  if (!clue) {
-    return (
-      <div className="rounded-2xl border border-border bg-surface p-8 text-center">
-        <p className="animate-pulse text-muted">Revealing the clue…</p>
-      </div>
-    );
-  }
-
-  const announce = clue.tag === "ANNOUNCE";
+  const announce = clue?.tag === "ANNOUNCE";
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-6 shadow-2xl">
-      {clue.alreadyFound && (
-        <p className="mb-3 text-[11px] uppercase tracking-widest text-muted">
-          You already found this one
-        </p>
-      )}
-      <div className="flex items-center gap-2">
-        <span className="rounded bg-surface-2 px-2 py-0.5 font-mono text-xs text-muted">
-          {clue.code}
-        </span>
-        <span
-          className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${
-            announce ? "bg-accent/20 text-accent" : "bg-gold/20 text-gold"
-          }`}
-        >
-          {announce ? "Announce" : "Keep"}
-        </span>
-      </div>
-      <h1 className="mt-2 text-2xl font-bold text-foreground">{clue.title}</h1>
-      <p className="mt-4 whitespace-pre-wrap leading-relaxed text-foreground">{clue.content}</p>
-
-      <div className="mt-5 rounded-lg border border-border bg-surface-2 p-3 text-sm text-muted">
-        {announce ? (
-          <>This is an <span className="text-accent">ANNOUNCE</span> clue — read it aloud to the room. It has been posted to everyone&apos;s feed.</>
+    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-abyss">
+      <Atmosphere intensity={1} tide />
+      <div className="relative z-[2] mx-auto flex w-full max-w-md flex-1 flex-col justify-center p-6">
+        {error ? (
+          <div className="card-noir p-6 text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-blood">Evidence locked</p>
+            <p className="mt-3 text-foreground">{error}</p>
+            <Link href="/play" className="mt-5 inline-block font-mono text-xs uppercase tracking-[0.22em] text-cyan">
+              ← Back to your dossier
+            </Link>
+          </div>
+        ) : !clue ? (
+          <div className="card-noir p-10 text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-cyan">◆ Evidence located · decoding</p>
+            <p className="mt-3 animate-pulse text-muted">Revealing the clue…</p>
+          </div>
         ) : (
-          <>This is a <span className="text-gold">KEEP</span> clue — yours to hold or share. The game master has been notified that you found it. You can share it from your dossier.</>
+          <Bracketed brass={!announce}>
+            <div className="card-noir p-6" style={announce ? undefined : { background: "rgba(196,167,113,0.04)" }}>
+              {clue.alreadyFound && (
+                <p className="eyebrow mb-3">You already logged this one</p>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs tracking-[0.16em] text-cyan">◆ CLUE {clue.code}</span>
+                <span
+                  className={`pill ${announce ? "pill-live" : "pill-brass"}`}
+                  style={{ marginLeft: "auto" }}
+                >
+                  {announce ? "Announce" : "Keep"}
+                </span>
+              </div>
+              <h1 className="display mt-3 text-3xl leading-tight text-foreground">{clue.title}</h1>
+              <p
+                className="mt-4 whitespace-pre-wrap leading-relaxed text-text-dim"
+                style={{ fontFamily: "var(--font-display)", fontSize: 15 }}
+              >
+                {clue.content}
+              </p>
+
+              <div className="mt-5 border-t border-border pt-4 text-sm text-muted">
+                {announce ? (
+                  <>
+                    <span className="text-cyan">ANNOUNCE</span> — read it aloud. It&apos;s been posted to the
+                    house feed.
+                  </>
+                ) : (
+                  <>
+                    <span className="text-brass">KEEP</span> — yours to hold or share. The game master has been
+                    notified. Share it from your dossier.
+                  </>
+                )}
+              </div>
+
+              <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                  Logged to your dossier
+                </span>
+                <Link href="/play" className="font-mono text-xs uppercase tracking-[0.22em] text-cyan">
+                  My dossier →
+                </Link>
+              </div>
+            </div>
+          </Bracketed>
         )}
       </div>
-
-      <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-        <span className="text-xs text-muted">Saved to your dossier.</span>
-        <Link href="/play" className="text-sm font-semibold uppercase tracking-widest text-gold">
-          My dossier →
-        </Link>
-      </div>
-    </div>
+    </main>
   );
 }
