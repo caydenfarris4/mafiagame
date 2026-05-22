@@ -126,7 +126,7 @@ const characters = [
     avatarColor: "#c14d8a",
     prop: "A small flower hair clip or a satin dance ribbon tied around your wrist.",
     sheet: sheet([
-      { heading: "Who you are", body: "You are 22. Beau's longtime girlfriend. You teach dance to children. The sweetest person any of these people have met. Your grandparents are your greatest source of love; the Whitfields have adopted you as one of their own." },
+      { heading: "Who you are", body: "You are 22. Beau's longtime girlfriend. You teach dance to children. The sweetest person any of these people have met. The Whitfields have taken you in as one of their own." },
       { heading: "Your relationship to Richard", body: "Most of the family resented him; you felt sorry for him. Friday he gave you a leather-bound book of his late mother's poems and said you reminded him of her. Friday night he privately told you he was including your grandparents in his will — $50,000 each. You were moved to tears and told no one, especially not Beau." },
       { heading: "Where you were Saturday night", body: "Board games on the bottom floor 8–10. Bonfire 10 onward." },
       { heading: "Your secret", body: "Saturday you started to suspect Richard was toying with you. At 9 PM you went to his guest room to verify. You opened the leather portfolio. There was no mention of your grandparents — only a sheet that said “$60M → TURD (final)” in his hand. He had lied to you, using your grandparents to manipulate you. You took the book of poems, left a thank-you note as cover, rearranged a photo frame, and walked out. You've known the truth about TURD since 9 PM and told no one." },

@@ -34,7 +34,7 @@ type Props = {
   initial: PlayState;
 };
 
-const TABS = ["Scan", "Dossier", "Last Night", "This Phase", "Clues", "Feed"] as const;
+const TABS = ["Scan", "Profile", "Timeline", "Phase", "Clues", "Feed"] as const;
 type Tab = (typeof TABS)[number];
 
 const PHASE_TRACK = ["Arrival", "Discovery", "Suspicions", "Investigation", "Unmasking", "Architect", "Toast"];
@@ -61,7 +61,7 @@ function Sections({ sections }: { sections: Section[] }) {
 
 export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("Dossier");
+  const [tab, setTab] = useState<Tab>("Profile");
   const [state, setState] = useState<PlayState>(initial);
   const [sharing, setSharing] = useState<string | null>(null);
 
@@ -179,7 +179,7 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
         </div>
       )}
 
-      {tab === "Dossier" && (
+      {tab === "Profile" && (
         <div className="card-noir flex flex-col gap-5 p-5">
           <p className="eyebrow">Character file · confidential</p>
           <Sections sections={sheet} />
@@ -194,7 +194,7 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
         </div>
       )}
 
-      {tab === "Last Night" && (
+      {tab === "Timeline" && (
         <div className="card-noir p-5">
           <p className="eyebrow">Alexander&apos;s reconstruction</p>
           <h2 className="display mt-1 mb-4 text-2xl text-foreground">The Last Night</h2>
@@ -202,7 +202,7 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
         </div>
       )}
 
-      {tab === "This Phase" && (
+      {tab === "Phase" && (
         <div className="card-noir flex flex-col gap-5 p-5">
           <div>
             <p className="eyebrow" style={{ color: "var(--cyan)" }}>

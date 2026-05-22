@@ -180,12 +180,13 @@ export default function ClueScanner() {
           </button>
         ) : (
           <form onSubmit={submitManual} className="flex flex-col gap-2">
-            <label className="eyebrow">Enter the clue code from the tag</label>
+            <label className="eyebrow">Enter the 6-character code on the tag</label>
             <div className="flex gap-2">
               <input
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                placeholder="2-1"
+                placeholder="K7M4QX"
+                maxLength={6}
                 autoComplete="off"
                 className="flex-1 border border-border bg-surface px-3 py-2 text-center font-mono text-lg tracking-[0.18em] text-cyan outline-none"
                 style={{ caretColor: "var(--cyan)" }}

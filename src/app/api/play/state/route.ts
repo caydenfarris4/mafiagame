@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
 import { requireApprovedPlayer } from "@/lib/auth";
 import { getPhase } from "@/lib/gameContent";
+import { clueEntryCode } from "@/lib/clueCode";
 
 export async function GET() {
   const gate = await requireApprovedPlayer();
@@ -17,7 +18,7 @@ export async function GET() {
       where: { characterId: character.id },
       orderBy: { foundAt: "desc" },
       include: {
-        clue: { select: { id: true, code: true, title: true, content: true, tag: true } },
+        clue: { select: { id: true, token: true, title: true, content: true, tag: true } },
       },
     }),
     prisma.announcement.findMany({
@@ -56,7 +57,13 @@ export async function GET() {
       id: d.id,
       shared: d.shared,
       foundAt: d.foundAt.toISOString(),
-      clue: d.clue,
+      clue: {
+        id: d.clue.id,
+        code: clueEntryCode(d.clue.token),
+        title: d.clue.title,
+        content: d.clue.content,
+        tag: d.clue.tag,
+      },
     })),
     announcements: announcements.map((a) => ({
       id: a.id,

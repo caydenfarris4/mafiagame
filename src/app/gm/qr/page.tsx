@@ -4,6 +4,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { getCurrentCharacter } from "@/lib/auth";
 import { getDb } from "@/lib/prisma";
+import { clueEntryCode } from "@/lib/clueCode";
 import PrintButton from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +70,10 @@ export default async function QrSheetPage() {
                   <div key={clue.id} className="flex flex-col items-center border border-border bg-white p-4 text-center text-black">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={qr} alt={`QR for clue ${clue.code}`} className="w-36" />
-                    <p className="mt-2 font-mono text-xs text-gray-500">
+                    <p className="mt-2 font-mono text-sm font-bold tracking-[0.2em] text-black">
+                      {clueEntryCode(clue.token)}
+                    </p>
+                    <p className="font-mono text-[10px] text-gray-400">
                       {clue.code} · {clue.tag}
                     </p>
                     <h2 className="font-semibold leading-tight" style={{ fontFamily: "var(--font-display)" }}>

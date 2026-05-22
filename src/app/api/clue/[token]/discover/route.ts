@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
 import { requireApprovedPlayer } from "@/lib/auth";
 import { getPhase } from "@/lib/gameContent";
+import { clueEntryCode } from "@/lib/clueCode";
 
 export async function POST(
   _request: Request,
@@ -63,7 +64,7 @@ export async function POST(
   }
 
   return NextResponse.json({
-    code: clue.code,
+    code: clueEntryCode(clue.token),
     title: clue.title,
     content: clue.content,
     tag: clue.tag,
