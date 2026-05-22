@@ -31,10 +31,14 @@ export default async function QrSheetPage() {
     orderBy: [{ phase: "asc" }, { code: "asc" }],
   });
 
+  // SVG (not PNG): string-built, so generating all 23 stays well under the
+  // Worker's per-request CPU/memory limit (PNG encoding blew it — error 1102).
   const cards = await Promise.all(
     clues.map(async (clue) => ({
       clue,
-      qr: await QRCode.toDataURL(`${baseUrl}/clue/${clue.token}`, { margin: 1, width: 300 }),
+      qr: `data:image/svg+xml;utf8,${encodeURIComponent(
+        await QRCode.toString(`${baseUrl}/clue/${clue.token}`, { type: "svg", margin: 1 }),
+      )}`,
     })),
   );
 
