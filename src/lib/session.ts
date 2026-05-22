@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 
 export type SessionData = {
   characterId?: string;
+  // The PlayerSession row this device claimed at login — used to gate access
+  // until the game master approves it. Absent for game-master logins.
+  sessionId?: string;
 };
 
 // Built per-request (not at module load) so `next build` doesn't fail when

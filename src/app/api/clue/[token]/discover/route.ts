@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
-import { getCurrentCharacter } from "@/lib/auth";
+import { requireApprovedPlayer } from "@/lib/auth";
 import { getPhase } from "@/lib/gameContent";
 
 export async function POST(
@@ -9,10 +9,9 @@ export async function POST(
 ) {
   const { token } = await params;
 
-  const character = await getCurrentCharacter();
-  if (!character) {
-    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
-  }
+  const gate = await requireApprovedPlayer();
+  if (gate.error) return gate.error;
+  const character = gate.character;
 
   const prisma = await getDb();
   const clue = await prisma.clue.findUnique({ where: { token } });

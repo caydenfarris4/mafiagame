@@ -33,6 +33,7 @@ model Game {
   clues           Clue[]
   announcements   Announcement[]
   votes           Vote[]
+  sessions        PlayerSession[]
 }
 
 model Character {
@@ -51,8 +52,31 @@ model Character {
   createdAt    DateTime        @default(now())
   discoveries  ClueDiscovery[]
   votes        Vote[]          @relation("voter")
+  sessions     PlayerSession[]
 
   @@index([gameId])
+}
+
+// One per device/login. Lets the game master see who's signed in and silo the
+// game: a new player device starts PENDING and can't see anything until the GM
+// approves it (confirming it's a real guest, not a bot caching the public site).
+model PlayerSession {
+  id          String    @id @default(cuid())
+  gameId      String
+  game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  status      String    @default("PENDING") // PENDING | APPROVED | BLOCKED
+  ipAddress   String?
+  country     String? // ISO country from the edge (e.g. "US"); null when unknown
+  city        String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  approvedAt  DateTime?
+
+  @@index([gameId])
+  @@index([characterId])
 }
 
 model Clue {

@@ -15,6 +15,19 @@ type Clue = { id: string; code: string; title: string; tag: string; phase: numbe
 type Character = { id: string; personaName: string; realName: string; role: string; loginCode: string; avatarColor: string | null; found: number };
 type LibraryItem = { id: string; kind: string; phase: number; title: string; body: string; isReleased: boolean };
 type VoteRow = { round: number; accusedName: string; voter: string };
+type Session = {
+  id: string;
+  status: string;
+  ip: string | null;
+  country: string | null;
+  city: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+  online: boolean;
+  foreign: boolean;
+  character: { personaName: string; realName: string; avatarColor: string | null };
+};
 
 type GmState = {
   game: { name: string; status: string; currentPhase: number; activeVoteRound: number | null };
@@ -24,6 +37,7 @@ type GmState = {
   characters: Character[];
   library: LibraryItem[];
   votes: VoteRow[];
+  sessions: Session[];
 };
 
 const PHASE_NAMES = ["Arrival", "Discovery", "Suspicions", "Investigation", "Unmasking", "Architect", "Toast"];
@@ -32,12 +46,52 @@ const ROLE_COLOR: Record<string, string> = {
   ACCOMPLICE: "var(--brass)",
   SINNER: "var(--muted)",
 };
-const TABS = ["Run", "Clues", "Suspects"] as const;
+const TABS = ["Run", "Clues", "Suspects", "Access"] as const;
 type Tab = (typeof TABS)[number];
 
 function avatarBg(color: string | null) {
   const c = color ?? "#7a3338";
   return `repeating-linear-gradient(135deg, ${c}, ${c} 4px, color-mix(in oklch, ${c}, black 25%) 4px, color-mix(in oklch, ${c}, black 25%) 8px)`;
+}
+
+// A short, friendly device label from the user-agent string.
+function deviceLabel(ua: string | null) {
+  if (!ua) return "Unknown device";
+  const os = /iPhone|iPad|iPod/i.test(ua)
+    ? "iPhone/iPad"
+    : /Android/i.test(ua)
+      ? "Android"
+      : /Macintosh|Mac OS X/i.test(ua)
+        ? "Mac"
+        : /Windows/i.test(ua)
+          ? "Windows"
+          : /Linux/i.test(ua)
+            ? "Linux"
+            : "Device";
+  const browser = /CriOS|Chrome/i.test(ua)
+    ? "Chrome"
+    : /FxiOS|Firefox/i.test(ua)
+      ? "Firefox"
+      : /Edg/i.test(ua)
+        ? "Edge"
+        : /Safari/i.test(ua)
+          ? "Safari"
+          : "browser";
+  return `${os} · ${browser}`;
+}
+
+function placeLabel(s: { city: string | null; country: string | null }) {
+  if (s.city && s.country) return `${s.city}, ${s.country}`;
+  return s.country ?? s.city ?? "Location unknown";
+}
+
+function sinceLabel(iso: string) {
+  const secs = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs}h ago`;
 }
 
 export default function GmDashboard({ initial }: { initial: GmState }) {
@@ -102,6 +156,20 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
     }
   }
 
+  async function sessionAction(id: string, action: "approve" | "block" | "remove") {
+    setBusy(`sess-${id}`);
+    try {
+      await fetch(`/api/gm/session/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      await refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function setVote(round: number | null) {
     setBusy(`vote-${round}`);
     try {
@@ -127,6 +195,11 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
 
   const autoReveals = state.library.filter((l) => l.kind === "AUTO_REVEAL");
   const solomon = state.library.filter((l) => l.kind === "SOLOMON");
+
+  const sessions = state.sessions ?? [];
+  const pending = sessions.filter((s) => s.status === "PENDING");
+  const approved = sessions.filter((s) => s.status === "APPROVED");
+  const blocked = sessions.filter((s) => s.status === "BLOCKED");
 
   return (
     <div className="flex flex-col gap-4">
@@ -167,13 +240,21 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className="flex-1 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition"
+            className="relative flex-1 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition"
             style={{
               color: tab === t ? "var(--abyss)" : "var(--muted)",
               background: tab === t ? "var(--brass)" : "transparent",
             }}
           >
             {t}
+            {t === "Access" && pending.length > 0 && (
+              <span
+                className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px]"
+                style={{ background: "var(--blood)", color: "#fff" }}
+              >
+                {pending.length}
+              </span>
+            )}
           </button>
         ))}
       </nav>
@@ -380,6 +461,162 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {tab === "Access" && (
+        <div className="flex flex-col gap-4">
+          <div className="card-noir p-4">
+            <p className="eyebrow" style={{ color: "var(--brass)" }}>
+              Who&apos;s in the game · {approved.length} admitted · {pending.length} waiting
+            </p>
+            <p className="mb-1 mt-1 text-sm text-text-dim" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+              Each guest&apos;s phone shows up here when they sign in. Confirm it&apos;s a real family member sitting with you,
+              then admit them. Foreign logins are blocked automatically.
+            </p>
+          </div>
+
+          {/* Waiting for approval */}
+          <div className="card-noir p-4">
+            <p className="eyebrow mb-3" style={{ color: "var(--blood)" }}>
+              Waiting for you · {pending.length}
+            </p>
+            {pending.length === 0 ? (
+              <p className="text-sm text-muted">No one is waiting to be let in.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {pending.map((s) => (
+                  <li key={s.id} className="border border-blood-dim bg-surface p-3" style={{ background: "rgba(168,71,79,0.06)" }}>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="flex h-9 w-9 shrink-0 items-center justify-center font-mono text-xs text-foreground"
+                        style={{ background: avatarBg(s.character.avatarColor) }}
+                      >
+                        {s.character.personaName.charAt(0)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {s.character.personaName} <span className="text-muted">· {s.character.realName}</span>
+                        </p>
+                        <p className="font-mono text-[11px] text-muted">
+                          {deviceLabel(s.userAgent)} · joined {sinceLabel(s.createdAt)}
+                        </p>
+                        <p className="font-mono text-[11px]" style={{ color: s.foreign ? "var(--blood)" : "var(--muted)" }}>
+                          {s.foreign ? "⚠ " : ""}
+                          {placeLabel(s)}
+                          {s.ip ? ` · ${s.ip}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        onClick={() => sessionAction(s.id, "approve")}
+                        disabled={busy === `sess-${s.id}`}
+                        className="flex-1 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] transition disabled:opacity-50"
+                        style={{ background: "var(--cyan)", color: "var(--abyss)" }}
+                      >
+                        Admit
+                      </button>
+                      <button
+                        onClick={() => sessionAction(s.id, "block")}
+                        disabled={busy === `sess-${s.id}`}
+                        className="px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] transition disabled:opacity-50"
+                        style={{ border: "1px solid var(--blood-dim)", color: "var(--blood)" }}
+                      >
+                        Block
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Admitted */}
+          <div className="card-noir p-4">
+            <p className="eyebrow mb-3" style={{ color: "var(--cyan)" }}>
+              Admitted devices · {approved.length}
+            </p>
+            {approved.length === 0 ? (
+              <p className="text-sm text-muted">No one admitted yet.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {approved.map((s) => (
+                  <li key={s.id} className="flex items-center gap-3 border border-border bg-surface px-3 py-2">
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center font-mono text-xs text-foreground"
+                      style={{ background: avatarBg(s.character.avatarColor) }}
+                    >
+                      {s.character.personaName.charAt(0)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {s.character.personaName}
+                        <span
+                          className="ml-2 font-mono text-[9px] uppercase tracking-wider"
+                          style={{ color: s.online ? "var(--cyan)" : "var(--muted)" }}
+                        >
+                          {s.online ? "● online" : `seen ${sinceLabel(s.lastSeenAt)}`}
+                        </span>
+                      </p>
+                      <p className="font-mono text-[11px] text-muted">{deviceLabel(s.userAgent)}</p>
+                      <p className="font-mono text-[11px]" style={{ color: s.foreign ? "var(--blood)" : "var(--muted)" }}>
+                        {s.foreign ? "⚠ " : ""}
+                        {placeLabel(s)}
+                        {s.ip ? ` · ${s.ip}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => sessionAction(s.id, "block")}
+                      disabled={busy === `sess-${s.id}`}
+                      title="Remove this device from the game"
+                      className="shrink-0 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] transition disabled:opacity-50"
+                      style={{ border: "1px solid var(--blood-dim)", color: "var(--blood)" }}
+                    >
+                      Kick
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Blocked */}
+          {blocked.length > 0 && (
+            <div className="card-noir p-4">
+              <p className="eyebrow mb-3">Blocked · {blocked.length}</p>
+              <ul className="flex flex-col gap-2">
+                {blocked.map((s) => (
+                  <li key={s.id} className="flex items-center gap-3 border border-border bg-surface px-3 py-2 opacity-70">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm">
+                        {s.character.personaName} <span className="text-muted">· {s.character.realName}</span>
+                      </p>
+                      <p className="font-mono text-[11px]" style={{ color: s.foreign ? "var(--blood)" : "var(--muted)" }}>
+                        {s.foreign ? "⚠ " : ""}
+                        {placeLabel(s)}
+                        {s.ip ? ` · ${s.ip}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => sessionAction(s.id, "approve")}
+                      disabled={busy === `sess-${s.id}`}
+                      className="shrink-0 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-cyan transition disabled:opacity-50"
+                    >
+                      Re-admit
+                    </button>
+                    <button
+                      onClick={() => sessionAction(s.id, "remove")}
+                      disabled={busy === `sess-${s.id}`}
+                      className="shrink-0 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted transition disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>

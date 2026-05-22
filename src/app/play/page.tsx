@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { getCurrentCharacter } from "@/lib/auth";
+import { getAccess } from "@/lib/auth";
 import { getPhase, LAST_NIGHT } from "@/lib/gameContent";
 import LogoutButton from "@/components/LogoutButton";
 import PlayBoard from "@/components/PlayBoard";
+import WaitingRoom from "@/components/WaitingRoom";
 import { Atmosphere } from "@/components/Atmosphere";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +11,30 @@ export const dynamic = "force-dynamic";
 type Section = { heading: string; body: string };
 
 export default async function PlayPage() {
-  const character = await getCurrentCharacter();
+  const { character, status } = await getAccess();
   if (!character) redirect("/");
   if (character.isGameMaster) redirect("/gm");
+
+  // Until the host approves this device, show a holding screen instead of the
+  // dossier — this is the silo that keeps a stranger's device out of the game.
+  if (status !== "APPROVED") {
+    return (
+      <main className="relative min-h-dvh overflow-hidden bg-abyss">
+        <Atmosphere intensity={1} tide />
+        <div className="relative z-[2] mx-auto flex min-h-dvh w-full max-w-2xl flex-col p-5">
+          <header className="mb-6 flex items-center justify-between gap-4 border-b border-border pb-5">
+            <p className="eyebrow" style={{ color: "var(--cyan)" }}>
+              {character.personaName}
+            </p>
+            <LogoutButton />
+          </header>
+          <div className="flex flex-1 items-center justify-center">
+            <WaitingRoom personaName={character.personaName} initialStatus={status === "BLOCKED" ? "BLOCKED" : "PENDING"} />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   let sheet: Section[] = [];
   try {

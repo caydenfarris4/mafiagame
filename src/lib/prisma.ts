@@ -1,9 +1,15 @@
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
 // The Prisma client is engine-free (queryCompiler), so every instance needs a
 // driver adapter:
 //  - On Cloudflare Workers, bind to the request's D1 database.
 //  - Locally (and any non-Cloudflare runtime), use libSQL against the dev file.
+//
+// Both paths use the SAME generated workerd client (src/generated/prisma); the
+// Node client (@prisma/client) is intentionally never imported at runtime so its
+// ~1.8 MB query-compiler WASM stays out of the Worker bundle, which otherwise
+// pushes us past the Workers size limit. (@prisma/client is used only as a type
+// here, which is erased at build time.)
 //
 // Server code calls `await getDb()` rather than importing a shared instance,
 // because the D1 binding only exists inside a request's Cloudflare context.
@@ -30,11 +36,14 @@ async function cloudflareDb(): Promise<PrismaClient | null> {
 
 async function localDb(): Promise<PrismaClient> {
   if (globalForPrisma.prismaLocal) return globalForPrisma.prismaLocal;
-  // DATABASE_URL is "file:./dev.db" relative to the prisma/ dir for the CLI;
-  // libSQL resolves from the project root, so point it at prisma/dev.db.
+  // Reuse the generated workerd client (not the Node @prisma/client) so the
+  // Worker bundle never pulls in the Node client's WASM. DATABASE_URL is
+  // "file:./dev.db" relative to the prisma/ dir for the CLI; libSQL resolves
+  // from the project root, so point it at prisma/dev.db.
+  const { PrismaClient: LocalClient } = await import("@/generated/prisma/client");
   const { PrismaLibSQL } = await import("@prisma/adapter-libsql");
   const adapter = new PrismaLibSQL({ url: "file:./prisma/dev.db" });
-  const client = new PrismaClient({ adapter });
+  const client = new LocalClient({ adapter }) as unknown as PrismaClient;
   globalForPrisma.prismaLocal = client;
   return client;
 }

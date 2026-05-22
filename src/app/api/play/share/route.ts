@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
-import { getCurrentCharacter } from "@/lib/auth";
+import { requireApprovedPlayer } from "@/lib/auth";
 
 // A player chooses to share a KEEP clue they found with the whole house.
 export async function POST(request: Request) {
-  const character = await getCurrentCharacter();
-  if (!character) {
-    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
-  }
+  const gate = await requireApprovedPlayer();
+  if (gate.error) return gate.error;
+  const character = gate.character;
 
   let body: { clueId?: unknown };
   try {

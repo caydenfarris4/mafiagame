@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
 import { getPhase } from "@/lib/gameContent";
+import { isCountryAllowed } from "@/lib/requestInfo";
+
+// A device counts as "online" if it checked in within this window.
+const ONLINE_WINDOW_MS = 30_000;
 
 export async function GET() {
   const gm = await getCurrentCharacter();
@@ -12,7 +16,7 @@ export async function GET() {
   const game = gm.game;
   const prisma = await getDb();
 
-  const [discoveries, clues, characters, library, votes] = await Promise.all([
+  const [discoveries, clues, characters, library, votes, sessions] = await Promise.all([
     prisma.clueDiscovery.findMany({
       where: { clue: { gameId } },
       orderBy: { foundAt: "desc" },
@@ -37,7 +41,16 @@ export async function GET() {
       orderBy: [{ sortOrder: "asc" }],
     }),
     prisma.vote.findMany({ where: { gameId }, include: { voter: { select: { personaName: true } } } }),
+    prisma.playerSession.findMany({
+      where: { gameId },
+      orderBy: [{ createdAt: "desc" }],
+      include: {
+        character: { select: { personaName: true, realName: true, avatarColor: true } },
+      },
+    }),
   ]);
+
+  const now = Date.now();
 
   return NextResponse.json({
     game: {
@@ -81,5 +94,18 @@ export async function GET() {
       isReleased: a.isReleased,
     })),
     votes: votes.map((v) => ({ round: v.round, accusedName: v.accusedName, voter: v.voter.personaName })),
+    sessions: sessions.map((s) => ({
+      id: s.id,
+      status: s.status,
+      ip: s.ipAddress,
+      country: s.country,
+      city: s.city,
+      userAgent: s.userAgent,
+      createdAt: s.createdAt.toISOString(),
+      lastSeenAt: s.lastSeenAt.toISOString(),
+      online: now - s.lastSeenAt.getTime() < ONLINE_WINDOW_MS,
+      foreign: !isCountryAllowed(s.country),
+      character: s.character,
+    })),
   });
 }
