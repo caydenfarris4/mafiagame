@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
 import { requireApprovedPlayer } from "@/lib/auth";
-import { getPhase } from "@/lib/gameContent";
+import { getPhase, clueRoom } from "@/lib/gameContent";
 import { clueEntryCode } from "@/lib/clueCode";
 
 export async function GET() {
@@ -18,7 +18,7 @@ export async function GET() {
       where: { characterId: character.id },
       orderBy: { foundAt: "desc" },
       include: {
-        clue: { select: { id: true, token: true, code: true, phase: true, title: true, content: true, tag: true } },
+        clue: { select: { id: true, token: true, code: true, phase: true, title: true, content: true, tag: true, location: true } },
       },
     }),
     prisma.announcement.findMany({
@@ -63,16 +63,26 @@ export async function GET() {
         title: d.clue.title,
         content: d.clue.content,
         tag: d.clue.tag,
+        room: clueRoom(d.clue.location),
         image: `/clues/${d.clue.code}.webp`,
       },
     })),
-    announcements: announcements.map((a) => ({
-      id: a.id,
-      kind: a.kind,
-      title: a.title,
-      body: a.body,
-      releasedAt: (a.releasedAt ?? a.createdAt).toISOString(),
-    })),
+    announcements: announcements.map((a) => {
+      // Clue announcements are titled "Clue <code>: <title>" — recover the code
+      // so the house feed can show the same photo the finder sees.
+      const m =
+        a.kind === "CLUE" || a.kind === "SHARED_CLUE"
+          ? a.title.match(/^Clue (\S+):/)
+          : null;
+      return {
+        id: a.id,
+        kind: a.kind,
+        title: a.title,
+        body: a.body,
+        image: m ? `/clues/${m[1]}.webp` : null,
+        releasedAt: (a.releasedAt ?? a.createdAt).toISOString(),
+      };
+    }),
     myVote: myVote ? { accusedName: myVote.accusedName } : null,
     candidates: candidates.map((c) => c.personaName),
   });

@@ -9,6 +9,7 @@ type Revealed = {
   title: string;
   content: string;
   tag: string;
+  room: string | null;
   image: string | null;
   alreadyFound: boolean;
 };
@@ -75,6 +76,11 @@ export default function ClueReveal({ token }: { token: string }) {
                 </span>
               </div>
               <h1 className="display mt-3 text-3xl leading-tight text-foreground">{clue.title}</h1>
+              {clue.room && (
+                <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                  Found in · {clue.room}
+                </p>
+              )}
               {clue.image && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

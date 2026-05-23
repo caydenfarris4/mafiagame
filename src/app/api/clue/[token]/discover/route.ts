@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
 import { requireApprovedPlayer } from "@/lib/auth";
-import { getPhase } from "@/lib/gameContent";
+import { getPhase, clueRoom } from "@/lib/gameContent";
 import { clueEntryCode } from "@/lib/clueCode";
 
 export async function POST(
@@ -68,6 +68,7 @@ export async function POST(
     title: clue.title,
     content: clue.content,
     tag: clue.tag,
+    room: clueRoom(clue.location),
     // The photo lives at public/clues/<code>.webp; it hides itself if not present.
     image: `/clues/${clue.code}.webp`,
     alreadyFound: Boolean(existing),

@@ -15,6 +15,26 @@ const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const BASE_URL = "https://deadinthewater.caydenfarris.net";
 const ROOT = path.resolve(__dirname, "..");
 
+// Mirror of src/lib/clueCode.ts so the printed manual-entry code matches what the
+// app derives from the same token. Keep the alphabet/length in sync with that file.
+const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const CODE_LEN = 6;
+function hash(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+function clueEntryCode(token) {
+  let out = "";
+  for (let i = 0; i < CODE_LEN; i++) {
+    out += ALPHABET[hash(`${token}:${i}`) % ALPHABET.length];
+  }
+  return out;
+}
+
 function loadClues() {
   const dbFile = path.join("/tmp", `qrpdf-${Date.now()}.db`);
   const db = new DatabaseSync(dbFile);
@@ -67,7 +87,10 @@ async function main() {
       page.drawText(text, { x: cellX + (COL_W - w) / 2, y: ty, size, font: f, color });
     };
     center(`Phase ${c.phase} · ${c.code} · ${c.tag}`, font, 8, dim);
-    ty -= 13;
+    ty -= 12;
+    // Manual-entry code (camera blocked? type this into the app).
+    center(`Code: ${clueEntryCode(c.token)}`, bold, 11, rgb(0, 0, 0));
+    ty -= 14;
     // Title (truncate if too wide for the column).
     let title = c.title;
     while (bold.widthOfTextAtSize(title, 10) > COL_W - 8 && title.length > 4) title = title.slice(0, -2);

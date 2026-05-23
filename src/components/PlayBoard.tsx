@@ -6,9 +6,9 @@ import { Bracketed } from "@/components/Atmosphere";
 import ClueScanner from "@/components/ClueScanner";
 
 type Section = { heading: string; body: string };
-type Clue = { id: string; code: string; title: string; content: string; tag: string; image: string | null };
+type Clue = { id: string; code: string; title: string; content: string; tag: string; room: string | null; image: string | null };
 type Discovery = { id: string; shared: boolean; foundAt: string; clue: Clue };
-type Announcement = { id: string; kind: string; title: string; body: string; releasedAt: string };
+type Announcement = { id: string; kind: string; title: string; body: string; image: string | null; releasedAt: string };
 type PhaseInfo = {
   n: number;
   name: string;
@@ -266,6 +266,11 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
                       </span>
                     </div>
                     <h3 className="display mt-1 text-lg text-foreground">{d.clue.title}</h3>
+                    {d.clue.room && (
+                      <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+                        Found in · {d.clue.room}
+                      </p>
+                    )}
                     {d.clue.image && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -325,6 +330,17 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
                     >
                       {solomon ? "🦜 Solomon" : a.title}
                     </h3>
+                    {a.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={a.image}
+                        alt={a.title}
+                        className="mt-2 w-full border border-border"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    )}
                     <p
                       className="mt-1.5 whitespace-pre-wrap text-foreground"
                       style={{ fontFamily: "var(--font-display)", fontSize: 15, fontStyle: solomon ? "italic" : "normal" }}
