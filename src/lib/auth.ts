@@ -61,10 +61,15 @@ export async function getAccess() {
   }
 
   // Any authenticated activity counts as a heartbeat for the online roster.
-  await prisma.playerSession.update({
-    where: { id: sessionRow.id },
-    data: { lastSeenAt: new Date() },
-  });
+  // Players poll every few seconds, but the roster only needs freshness within
+  // its 30s online window, so skip the write when we refreshed recently. This
+  // cuts D1 writes on the hottest path; staleness stays well inside the window.
+  if (Date.now() - sessionRow.lastSeenAt.getTime() >= 20_000) {
+    await prisma.playerSession.update({
+      where: { id: sessionRow.id },
+      data: { lastSeenAt: new Date() },
+    });
+  }
 
   const status: AccessStatus =
     sessionRow.status === "APPROVED" ? "APPROVED" : "PENDING";

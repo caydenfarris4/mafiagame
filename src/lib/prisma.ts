@@ -14,7 +14,11 @@ import type { PrismaClient } from "@prisma/client";
 // Server code calls `await getDb()` rather than importing a shared instance,
 // because the D1 binding only exists inside a request's Cloudflare context.
 
-const globalForPrisma = globalThis as unknown as { prismaLocal?: PrismaClient };
+const globalForPrisma = globalThis as unknown as {
+  prismaLocal?: PrismaClient;
+  prismaCf?: PrismaClient;
+  prismaCfD1?: unknown;
+};
 
 async function cloudflareDb(): Promise<PrismaClient | null> {
   try {
@@ -22,12 +26,23 @@ async function cloudflareDb(): Promise<PrismaClient | null> {
     const { env } = getCloudflareContext();
     const d1 = (env as Record<string, unknown>).DB;
     if (!d1) return null;
+    // Reuse the client across requests in this isolate. The D1 binding is
+    // isolate-global (not request-scoped I/O), so building the client — and
+    // instantiating its query-compiler WASM — once instead of on every request
+    // removes the main cold-start / CPU-limit pressure without changing any
+    // query behavior. Keyed on the binding identity so a fresh isolate rebuilds.
+    if (globalForPrisma.prismaCf && globalForPrisma.prismaCfD1 === d1) {
+      return globalForPrisma.prismaCf;
+    }
     // The workerd-targeted client loads its query-compiler WASM as a module.
     const { PrismaClient: EdgeClient } = await import("@/generated/prisma/client");
     const { PrismaD1 } = await import("@prisma/adapter-d1");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const adapter = new PrismaD1(d1 as any);
-    return new EdgeClient({ adapter }) as unknown as PrismaClient;
+    const client = new EdgeClient({ adapter }) as unknown as PrismaClient;
+    globalForPrisma.prismaCf = client;
+    globalForPrisma.prismaCfD1 = d1;
+    return client;
   } catch {
     // Not running on Cloudflare (or context unavailable) — fall back to local.
     return null;
