@@ -173,3 +173,10 @@ export const GM_INTRO: { heading: string; body: string; readAloud?: boolean }[] 
     body: "Each phase you open unlocks more of the house. Players scan a clue's QR tag (or type the printed code) to log it. “Announce” clues post to the house feed for everyone; “Keep” clues stay private until the finder shares them. Fire the scripted reveals and Solomon lines from this dashboard at the right moments, and open the accusation ballots in Phases 4 and 5.",
   },
 ];
+
+// Scene-setting establishing photos shown on the GM's opening briefing (GM-only).
+// Served from public/evidence/; each <img> hides itself if its file is missing.
+export const GM_INTRO_IMAGES: { src: string; caption: string }[] = [
+  { src: "/evidence/property.webp", caption: "The Gig Harbor property" },
+  { src: "/evidence/dock.webp", caption: "The dock at dawn" },
+];

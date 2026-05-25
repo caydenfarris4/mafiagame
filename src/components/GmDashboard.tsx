@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { GM_INTRO } from "@/lib/gameContent";
+import { GM_INTRO, GM_INTRO_IMAGES } from "@/lib/gameContent";
 
 type PhaseInfo = { n: number; name: string; durationMin: number | null; blurb: string; open: string[]; locked: string[] };
 type Discovery = {
@@ -284,6 +284,25 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
               <p className="eyebrow mb-3" style={{ color: "var(--brass)" }}>
                 Opening the game · read aloud to the table
               </p>
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                {GM_INTRO_IMAGES.map((img) => (
+                  <figure key={img.src} className="m-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img.src}
+                      alt={img.caption}
+                      className="w-full border border-border object-cover"
+                      onError={(e) => {
+                        const fig = (e.currentTarget as HTMLImageElement).closest("figure");
+                        if (fig) (fig as HTMLElement).style.display = "none";
+                      }}
+                    />
+                    <figcaption className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                      {img.caption}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
               <div className="flex flex-col gap-4">
                 {GM_INTRO.map((s, i) => (
                   <div
