@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
 import { requireApprovedPlayer } from "@/lib/auth";
-import { getPhase, clueRoom } from "@/lib/gameContent";
+import { getPhase, clueRoom, revealImage } from "@/lib/gameContent";
 import { clueEntryCode } from "@/lib/clueCode";
 
 export async function GET() {
@@ -69,17 +69,21 @@ export async function GET() {
     })),
     announcements: announcements.map((a) => {
       // Clue announcements are titled "Clue <code>: <title>" — recover the code
-      // so the house feed can show the same photo the finder sees.
-      const m =
-        a.kind === "CLUE" || a.kind === "SHARED_CLUE"
-          ? a.title.match(/^Clue (\S+):/)
-          : null;
+      // so the house feed shows the same photo the finder sees. Scripted reveals
+      // (the body, the cleat, the portfolio) map to their evidence photo by title.
+      let image: string | null = null;
+      if (a.kind === "CLUE" || a.kind === "SHARED_CLUE") {
+        const m = a.title.match(/^Clue (\S+):/);
+        if (m) image = `/clues/${m[1]}.webp`;
+      } else {
+        image = revealImage(a.title);
+      }
       return {
         id: a.id,
         kind: a.kind,
         title: a.title,
         body: a.body,
-        image: m ? `/clues/${m[1]}.webp` : null,
+        image,
         releasedAt: (a.releasedAt ?? a.createdAt).toISOString(),
       };
     }),

@@ -13,7 +13,7 @@ type Discovery = {
 };
 type Clue = { id: string; code: string; title: string; tag: string; phase: number; location: string; found: number };
 type Character = { id: string; personaName: string; realName: string; role: string; loginCode: string; avatarColor: string | null; found: number };
-type LibraryItem = { id: string; kind: string; phase: number; title: string; body: string; isReleased: boolean };
+type LibraryItem = { id: string; kind: string; phase: number; title: string; body: string; image: string | null; isReleased: boolean };
 type VoteRow = { round: number; accusedName: string; voter: string };
 type Session = {
   id: string;
@@ -353,11 +353,24 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
               {autoReveals.map((item) => (
                 <li key={item.id} className="border border-border bg-surface p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{item.title}</p>
-                      <p className="mt-0.5 text-xs text-muted" style={{ fontFamily: "var(--font-display)" }}>
-                        {item.body}
-                      </p>
+                    <div className="flex min-w-0 gap-3">
+                      {item.image && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="h-12 w-12 shrink-0 border border-border object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">{item.title}</p>
+                        <p className="mt-0.5 text-xs text-muted" style={{ fontFamily: "var(--font-display)" }}>
+                          {item.body}
+                        </p>
+                      </div>
                     </div>
                     <button
                       onClick={() => toggleReveal(item)}

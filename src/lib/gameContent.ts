@@ -111,6 +111,20 @@ export function clueRoom(location: string): string {
     .trim();
 }
 
+// Evidence photos for the scripted murder-investigation reveals, keyed by the
+// announcement title. Files live in public/evidence/ and the <img> hides itself
+// if a file is missing, so this is safe to ship before the photos are uploaded.
+const REVEAL_IMAGES: Record<string, string> = {
+  "Phase 1 — The body": "/evidence/body.webp",
+  "Phase 1 — The cleat is missing": "/evidence/cleat-missing.webp",
+  "Phase 1 — The portfolio": "/evidence/portfolio.webp",
+  "Phase 2 — The cleat recovered": "/evidence/cleat-recovered.webp",
+};
+
+export function revealImage(title: string): string | null {
+  return REVEAL_IMAGES[title] ?? null;
+}
+
 // Shared with every player on their "The Last Night" tab. Alexander's reconstructed
 // timeline. Sections render as heading + body (newlines preserved).
 export const LAST_NIGHT: { heading: string; body: string }[] = [

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/prisma";
 import { getCurrentCharacter } from "@/lib/auth";
-import { getPhase } from "@/lib/gameContent";
+import { getPhase, revealImage } from "@/lib/gameContent";
 import { isCountryAllowed } from "@/lib/requestInfo";
 
 // A device counts as "online" if it checked in within this window.
@@ -91,6 +91,7 @@ export async function GET() {
       phase: a.phase,
       title: a.title,
       body: a.body,
+      image: revealImage(a.title),
       isReleased: a.isReleased,
     })),
     votes: votes.map((v) => ({ round: v.round, accusedName: v.accusedName, voter: v.voter.personaName })),
