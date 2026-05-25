@@ -130,7 +130,7 @@ const characters = [
       { heading: "Your relationship to Richard", body: "Most of the family resented him; you felt sorry for him. Friday he gave you a leather-bound book of his late mother's poems and said you reminded him of her. Friday night he privately told you he was including your grandparents in his will — $50,000 each. You were moved to tears and told no one, especially not Beau." },
       { heading: "Where you were Saturday night", body: "Board games on the bottom floor 8–10. Bonfire 10 onward." },
       { heading: "Your secret", body: "Saturday you started to suspect Richard was toying with you. At 9 PM you went to his guest room to verify. You opened the leather portfolio. There was no mention of your grandparents — only a sheet that said “$60M → TURD (final)” in his hand. He had lied to you, using your grandparents to manipulate you. You took the book of poems, left a thank-you note as cover, rearranged a photo frame, and walked out. You've known the truth about TURD since 9 PM and told no one." },
-      { heading: "How to play it", body: "Sweet, loyal, quietly hurt but holding it in. PHASE 3: when the thank-you note is found, confess ONLY the surface — you went to thank him for the book. Do NOT reveal the TURD paper yet. PHASE 4: after Cody shows his photo, step forward: “I saw it too. At nine, in his room. He told me Friday he was leaving something to my grandparents. I went to verify. He had lied to me.”" },
+      { heading: "How to play it", body: "Sweet, loyal, quietly hurt but holding it in. PHASE 3: when the thank-you note is found, confess ONLY the surface — you went to thank him for the book. Do NOT reveal the TURD paper yet. PHASE 4: once the truth about the TURD inheritance comes out, step forward: “I saw it too. At nine, in his room. He told me Friday he was leaving something to my grandparents. I went to verify. He had lied to me.”" },
     ]),
   },
   {
@@ -163,7 +163,7 @@ const characters = [
       { heading: "Your relationship to Richard", body: "You thought he was funny. He talked to you like an adult at dinner. He told you Friday that you reminded him of himself at your age." },
       { heading: "Where you were Saturday night", body: "Bonfire and patio. In bed by 11:30. You missed the murder." },
       { heading: "Your secret", body: "Saturday around 2:15 PM you snuck into Richard's guest room out of curiosity, opened the leather portfolio, and saw a paper that said “$60M → TURD (final)” in his handwriting. You took a photo on your phone. You didn't know what TURD was. You told no one. (The GM will help you take this photo for real before the game.)" },
-      { heading: "Your big moment", body: "You are the hero of this game. Quiet-hero. Hold the secret all morning; don't volunteer anything. In PHASE 4, Alexander will turn to you and ask: “Cody. Anything you've been holding onto?” That's your cue. Pull out the phone. Show the photo. Sebastian is unmasked because of you. Be patient. Be a teenager. When Alexander looks at you, you deliver." },
+      { heading: "Your big moment", body: "You are the hero of this game. Quiet-hero. Hold the secret all morning; don't volunteer anything. In PHASE 4, Alexander will turn to you and ask: “Cody. Anything you've been holding onto?” That's your cue. Pull out the phone. Show the photo. It breaks the case wide open. Be patient. Be a teenager. When Alexander looks at you, you deliver." },
     ]),
   },
   {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { GM_INTRO } from "@/lib/gameContent";
 
 type PhaseInfo = { n: number; name: string; durationMin: number | null; blurb: string; open: string[]; locked: string[] };
 type Discovery = {
@@ -277,6 +278,37 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
 
       {tab === "Run" && (
         <div className="flex flex-col gap-4">
+          {/* Opening briefing — Phase 0–1 only */}
+          {cur <= 1 && (
+            <div className="card-noir p-4">
+              <p className="eyebrow mb-3" style={{ color: "var(--brass)" }}>
+                Opening the game · read aloud to the table
+              </p>
+              <div className="flex flex-col gap-4">
+                {GM_INTRO.map((s, i) => (
+                  <div
+                    key={i}
+                    className={s.readAloud ? "border-l-2 pl-3" : ""}
+                    style={s.readAloud ? { borderColor: "var(--brass-dim)" } : undefined}
+                  >
+                    <h3
+                      className="font-mono text-[11px] uppercase tracking-[0.18em]"
+                      style={{ color: s.readAloud ? "var(--brass)" : "var(--muted)" }}
+                    >
+                      {s.heading}
+                    </h3>
+                    <p
+                      className={`mt-1 whitespace-pre-wrap text-sm ${s.readAloud ? "text-foreground" : "text-text-dim"}`}
+                      style={{ fontFamily: "var(--font-display)", fontStyle: s.readAloud ? "italic" : "normal" }}
+                    >
+                      {s.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Voting */}
           <div className="card-noir p-4">
             <p className="eyebrow mb-3" style={{ color: "var(--blood)" }}>

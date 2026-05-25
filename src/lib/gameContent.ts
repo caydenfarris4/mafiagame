@@ -135,3 +135,27 @@ export const LAST_NIGHT: { heading: string; body: string }[] = [
     body: "I found Mr. Crookshank near the dock early Sunday morning. Dr. Langford places the time of death late Saturday night. Everything beyond that is what we are here to work out together.",
   },
 ];
+
+// GM-only opening briefing, shown on the game master's dashboard during Phases
+// 0–1. The `readAloud` sections are Alexander's script to read to the table; the
+// others are staging notes for the GM. Players never see this.
+export const GM_INTRO: { heading: string; body: string; readAloud?: boolean }[] = [
+  {
+    heading: "Before you begin",
+    body: "Admit every guest on the Access tab and make sure each person is holding their own phone. Gather everyone, then read the lines below aloud as Alexander, the house manager. When you're done, advance to Phase 2 to open the house for searching.",
+  },
+  {
+    heading: "The setup — read aloud",
+    readAloud: true,
+    body: "Thank you all for coming to the lake house this weekend. As you know, our guest was Mr. Richard Crookshank — the family's long-lost relation. This morning I found him in the shallows beside the dock. He is dead. Dr. Langford says it happened late last night, between half past eleven and midnight. And this was no accident: the brass cleat at the end of the dock has been torn loose and is missing, the notarized envelope he carried all weekend is gone, and Solomon has not stopped screaming since dawn.",
+  },
+  {
+    heading: "Why we're all here — read aloud",
+    readAloud: true,
+    body: "Here is the hard truth. Every one of you had your own history with Richard, and every one of you is keeping something this weekend. We are going to search this house together, room by room, as the morning goes on. Some of you will be hunting for clues to clear your name — to prove you didn't do this. Others, I suspect, will be looking to point the rest of us in the wrong direction. When you find something, you decide: show it to the family, or keep it to yourself. By the end of the morning, we will know who killed Richard Crookshank.",
+  },
+  {
+    heading: "Running the game",
+    body: "Each phase you open unlocks more of the house. Players scan a clue's QR tag (or type the printed code) to log it. “Announce” clues post to the house feed for everyone; “Keep” clues stay private until the finder shares them. Fire the scripted reveals and Solomon lines from this dashboard at the right moments, and open the accusation ballots in Phases 4 and 5.",
+  },
+];
