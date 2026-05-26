@@ -81,7 +81,7 @@ const characters = [
       { heading: "Your secret — you killed him", body: "Saturday afternoon Vivi found you in the boathouse with the news about TURD. You planned together over two hours. At 11:35 you walked to the dock, took the loose cleat, swung once. Richard fell, struck the piling, went into the shallows. You threw the cleat in the lake, took the notarized envelope, and returned to the bonfire at 11:50." },
       { heading: "What you're hiding", body: "The notarized envelope is folded in the inside pocket of your navy blazer (on the back of your breakfast chair — you couldn't move it). The “11:35 — go” note from Vivi is behind it. Your inheritance-vs-debt ledger is in a Monopoly box on the bottom floor. The dock-layout diagram you drew Friday is taped behind the orca mural." },
       { heading: "What you must lie about", body: "The smoke break (you needed air). The envelope (you don't know where it is). The diagram (never seen it). The ledger (just normal expense tracking)." },
-      { heading: "How to play it / your break", body: "Cool, dry, slightly above it. Click your pen when nervous — leave that tell in. Smug in Phase 2, uneasy in Phase 3. You break in Phase 4: when Cody's photo lands, you can deny once, not twice. Confess short and clean. Do NOT implicate Vivi — you take the fall alone." },
+      { heading: "How to play it", body: "Cool, dry, slightly above it. Click your pen when nervous — leave that tell in. Deny any allegations for as long as possible. But if you are revealed, DO NOT implicate your wife, Vivi — you take the fall alone. You love her too much to let anything bad happen to her." },
     ]),
   },
   {
