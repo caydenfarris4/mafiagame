@@ -62,7 +62,7 @@ const characters = [
       { heading: "Your secret — you and Sebastian planned the murder together", body: "You walked back to the boathouse, found Sebastian, and told him about TURD. Within two hours you had a plan: he would do it, you would distract. You wrote “11:35 — go” on a note and gave it to him." },
       { heading: "The night", body: "Just before 11:30 you slipped to the primary suite balcony with opera binoculars to make sure the dock was empty, then left them on the loveseat (you never came back for them). At 11:30 you launched a Broadway story you'd told before — the same one from last Christmas dinner — to fill exactly the time Sebastian needed. At 11:55 you went upstairs, balled up a sticky note that said “breathe. it's done.” into the master bathroom trash, and came back at 12:02." },
       { heading: "What you must lie about", body: "Whether Richard told you anything Saturday afternoon. Whether you saw anything from upstairs. Whether the “11:35 — go” note is your handwriting. The Christmas story." },
-      { heading: "How to play it / your break", body: "Charming, devastated, deflective. When Sebastian is unmasked in Phase 4, perform horror — admit nothing. In Phase 5, when the Christmas-story detail surfaces, you have ten seconds. Alexander will guide you. Your final confession is heavy: you are not asking forgiveness, you are explaining." },
+      { heading: "How to play it", body: "Charming, devastated, deflective. Deny, deny, deny — for as long as you possibly can. If you or your husband, Sebastian, is revealed, do not implicate the other — you love him too much to let anything bad happen to him. If Sebastian is the one revealed, act surprised and admit nothing." },
     ]),
   },
   {
