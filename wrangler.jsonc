@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dead-in-the-water",
+  "name": "mafiagame",
   "main": ".open-next/worker.js",
   // Build the OpenNext worker before any deploy/upload. This lets Cloudflare's
   // git-connected Workers Builds (and `wrangler deploy`) generate
