@@ -27,7 +27,7 @@ const characters = [
       { heading: "Where you were Saturday night", body: "Bonfire from 9 PM. With Catherine on the patio between 11 and 12. You did NOT go to the dock." },
       { heading: "Your secret", body: "At 8 PM in the gazebo, you and Richard had a private confrontation. He mocked your father, the ranch, your “self-made man” story. You shoved him into a stack of life jackets. He laughed. You walked out — and tore a small scrap of fabric from his green tweed jacket as you grabbed him. It's folded inside the inner pocket of your coat in the entryway closet. Solomon watched the whole thing. You've told no one, not even Catherine, because it makes you look guilty." },
       { heading: "What you don't know", body: "Anything about the actual murder." },
-      { heading: "How to play it", body: "Mortified. You'll be the loudest voice redirecting suspicion early — that's your tell, but the family reads it as the temper. When Solomon screeches your gazebo words in Phase 2, you confess. Until then, deny." },
+      { heading: "How to play it", body: "Mortified. You'll be the loudest voice redirecting suspicion early — that's your tell, but the family reads it as the temper. Deny the gazebo confrontation for as long as you can; once it's out in the open, confess." },
     ]),
   },
   {
@@ -44,7 +44,7 @@ const characters = [
       { heading: "Where you were Saturday night", body: "Tended the bonfire from 9 PM with brief trips inside. With Hank on the patio between 11 and 12." },
       { heading: "Your secret", body: "You've been writing a tell-all family memoir for three years — Things My Mother Knew — with uncomfortable truths about every Whitfield. You sent a draft to a publisher in March. Friday you discovered Richard had obtained a copy and hinted at it at dinner. You panicked. At 9:30 PM Saturday you slipped into his guest room, took the draft, and burned every page in the bonfire." },
       { heading: "What you're hiding", body: "Nothing physical — you destroyed it. But a single charred page survived in the cooled fire pit ash." },
-      { heading: "How to play it", body: "Composed and loving. When the burned page is found in Phase 3, you confess. Frame it as protecting the family, not deceiving them." },
+      { heading: "How to play it", body: "Composed and loving. Deny for as long as you can; once your secret is out, confess. Frame it as protecting the family, not deceiving them." },
     ]),
   },
   {
@@ -98,7 +98,7 @@ const characters = [
       { heading: "Where you were Saturday night", body: "Helping in the kitchen with s'mores and mocktails 9–10:30. Bonfire 10:30 onward." },
       { heading: "Your secret", body: "Saturday afternoon you discovered Richard had been stringing you along — the donation was never coming. You confronted him alone in the gazebo at 7 PM. He laughed at you. You walked out fuming." },
       { heading: "What you're hiding", body: "Nothing physical — just the fight. You're terrified the gazebo confrontation makes you look like the murderer." },
-      { heading: "How to play it", body: "Tense, defensive, sharper than usual. When the torn guestbook page surfaces in Phase 3, you confess. Frame it as a fight, not a threat." },
+      { heading: "How to play it", body: "Tense, defensive, sharper than usual. Deny the gazebo fight for as long as you can; once it's out, confess. Frame it as a fight, not a threat." },
     ]),
   },
   {
@@ -114,7 +114,7 @@ const characters = [
       { heading: "Your relationship to Richard", body: "Friday night you pitched him on investing in a “Beau Thats Hot” relaunch. He laughed in your face — said your idea had “the marketing instincts of a teen with a TikTok addiction.” You smiled and said “respect the honesty.”" },
       { heading: "Where you were Saturday night", body: "Bonfire and patio. Tossing a football with Cody and Levi 9–10. You walked off briefly at 10 PM to “use the bathroom.”" },
       { heading: "Your secret", body: "At 10 PM, instead of the bathroom, you stole Richard's entire case of glass-bottle root beer from the kitchen and hid it under the second blue kayak on the patio. You drank one. You wanted to watch his face when he found it gone. Solomon witnessed the theft — hence “WHERE'S MY ROOT BEER!”" },
-      { heading: "How to play it", body: "Performatively unbothered. Crack jokes. When the empty bottle surfaces in Phase 3, deny. When the case is found, confess — the room will laugh. You're not in real trouble." },
+      { heading: "How to play it", body: "Performatively unbothered. Crack jokes and deny the root beer for as long as it's funny. Once it's clearly pinned on you, confess — the room will laugh. You're not in real trouble." },
     ]),
   },
   {
@@ -130,7 +130,7 @@ const characters = [
       { heading: "Your relationship to Richard", body: "Most of the family resented him; you felt sorry for him. Friday he gave you a leather-bound book of his late mother's poems and said you reminded him of her. Friday night he privately told you he was including your grandparents in his will — $50,000 each. You were moved to tears and told no one, especially not Beau." },
       { heading: "Where you were Saturday night", body: "Board games on the bottom floor 8–10. Bonfire 10 onward." },
       { heading: "Your secret", body: "Saturday you started to suspect Richard was toying with you. At 9 PM you went to his guest room to verify. You opened the leather portfolio. There was no mention of your grandparents — only a sheet that said “$60M → TURD (final)” in his hand. He had lied to you, using your grandparents to manipulate you. You took the book of poems, left a thank-you note as cover, rearranged a photo frame, and walked out. You've known the truth about TURD since 9 PM and told no one." },
-      { heading: "How to play it", body: "Sweet, loyal, quietly hurt but holding it in. PHASE 3: when the thank-you note is found, confess ONLY the surface — you went to thank him for the book. Do NOT reveal the TURD paper yet. PHASE 4: once the truth about the TURD inheritance comes out, step forward: “I saw it too. At nine, in his room. He told me Friday he was leaving something to my grandparents. I went to verify. He had lied to me.”" },
+      { heading: "How to play it", body: "Sweet, loyal, quietly hurt but holding it in. Hold both your secrets close and don't volunteer them. If pressed about the thank-you note, admit only the surface — you went to thank him for the book. Keep what you saw about TURD to yourself; if the inheritance comes up, step forward: “I saw it too. At nine, in his room. He told me Friday he was leaving something to my grandparents. I went to verify. He had lied to me.”" },
     ]),
   },
   {
@@ -147,7 +147,7 @@ const characters = [
       { heading: "Where you were Saturday night (official version)", body: "On the porch with Alexander 10 PM–12:30 AM, “looking at the stars.” Alexander has agreed to confirm this." },
       { heading: "Your secret", body: "You weren't on the porch. You were on Wyatt's family's three-tier houseboat playing late-night cards (chips, not money — this is important, NOT money) with five rich friends. You snuck out at 10 and back at 12:30. Alexander covered for you without knowing where you went." },
       { heading: "What you're hiding", body: "The boarding ticket from Lake Saunders Houseboat Marina is under your mattress. Your phone has time-stamped photos of you at the houseboat at 11:35 PM — when the murder happened." },
-      { heading: "How to play it", body: "Performatively bored. When the boarding ticket is found in Phase 3, confess — and keep clarifying chips, not money, three or four times, as a comedic beat. Then realize being off-property looks bad, and show the photos to prove you were elsewhere during the murder." },
+      { heading: "How to play it", body: "Performatively bored. If the boarding ticket turns up, confess — and keep clarifying chips, not money, three or four times, as a comedic beat. Then, realizing being off-property looks bad, show the photos to prove you were elsewhere during the murder." },
     ]),
   },
   {
@@ -163,7 +163,7 @@ const characters = [
       { heading: "Your relationship to Richard", body: "You thought he was funny. He talked to you like an adult at dinner. He told you Friday that you reminded him of himself at your age." },
       { heading: "Where you were Saturday night", body: "Bonfire and patio. In bed by 11:30. You missed the murder." },
       { heading: "Your secret", body: "Saturday around 2:15 PM you snuck into Richard's guest room out of curiosity, opened the leather portfolio, and saw a paper that said “$60M → TURD (final)” in his handwriting. You took a photo on your phone. You didn't know what TURD was. You told no one. (The GM will help you take this photo for real before the game.)" },
-      { heading: "Your big moment", body: "You are the hero of this game. Quiet-hero. Hold the secret all morning; don't volunteer anything. In PHASE 4, Alexander will turn to you and ask: “Cody. Anything you've been holding onto?” That's your cue. Pull out the phone. Show the photo. It breaks the case wide open. Be patient. Be a teenager. When Alexander looks at you, you deliver." },
+      { heading: "Your big moment", body: "You are the hero of this game. Quiet-hero. Hold the secret; don't volunteer anything. At some point Alexander will turn to you and ask: “Cody. Anything you've been holding onto?” That's your cue. Pull out the phone. Show the photo. It breaks the case wide open. Be patient. Be a teenager. When Alexander looks at you, you deliver." },
     ]),
   },
   {
