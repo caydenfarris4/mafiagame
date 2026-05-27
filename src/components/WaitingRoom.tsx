@@ -34,7 +34,7 @@ export default function WaitingRoom({
 
   useEffect(() => {
     const kick = setTimeout(check, 0);
-    const t = setInterval(check, 3000);
+    const t = setInterval(check, 5000);
     return () => {
       clearTimeout(kick);
       clearInterval(t);

@@ -81,7 +81,7 @@ export default function PlayBoard({ prop, sheet, lastNight, initial }: Props) {
 
   useEffect(() => {
     const kick = setTimeout(refresh, 0);
-    const t = setInterval(refresh, 5000);
+    const t = setInterval(refresh, 10000);
     return () => {
       clearTimeout(kick);
       clearInterval(t);

@@ -20,7 +20,9 @@ export async function GET() {
     prisma.clueDiscovery.findMany({
       where: { clue: { gameId } },
       orderBy: { foundAt: "desc" },
-      take: 250,
+      // The dashboard only renders the 40 most recent (GmDashboard slice(0,40)),
+      // so fetching more just burns D1 row-reads on every poll.
+      take: 40,
       include: {
         character: { select: { id: true, personaName: true, realName: true, avatarColor: true } },
         clue: { select: { id: true, code: true, title: true, tag: true, location: true, phase: true } },

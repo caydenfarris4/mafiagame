@@ -122,7 +122,10 @@ export default function GmDashboard({ initial }: { initial: GmState }) {
 
   useEffect(() => {
     const kick = setTimeout(refresh, 0);
-    const t = setInterval(refresh, 4000);
+    // Background poll only surfaces incoming player activity; every GM action
+    // calls refresh() itself, so a slower tick stays responsive while cutting
+    // D1 reads (this is the heaviest query in the app).
+    const t = setInterval(refresh, 10000);
     return () => {
       clearTimeout(kick);
       clearInterval(t);
