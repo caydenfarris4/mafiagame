@@ -41,16 +41,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma (local sqlite dev database)
-/prisma/dev.db
-/prisma/dev.db-journal
-/prisma/*.db
-/prisma/*.db-journal
-
 # cloudflare / opennext build output
 /.open-next/
 /.wrangler/
 .dev.vars
 
-# generated prisma clients
-/src/generated
+# python game server
+server/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.python-version

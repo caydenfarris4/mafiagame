@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Dead in the Water",
-  description: "A parlour murder — the digital companion.",
+  description: "A social-deduction party game. Host on a TV, play on your phones.",
 };
 
 export default function RootLayout({

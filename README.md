@@ -1,106 +1,97 @@
 # Dead in the Water
 
-A digital companion for the **"Dead in the Water"** murder-mystery party game, built
-for the Whitfield lake house weekend at **deadinthewater.caydenfarris.net**. Each guest logs in as their
-character, reads their private dossier, walks the house scanning QR-code clues, and the
-game master (Alexander) runs the five phases from a control dashboard.
+A **Jackbox-style social-deduction party game** for 4–10 players, built to the
+[Game Design Document](#). One screen hosts the game (a TV or laptop); everyone
+else plays from their phone by entering a 4-character room code — no app to
+install. One player is secretly the murderer (two, with an accomplice, at 6+
+players); the room has ~30 minutes of clue drops, mingling, interrogations and
+votes to catch them before the police arrive. A talking **Narrator** (the
+Detective) drives the whole thing aloud on the TV.
 
-Built with Next.js (App Router) + TypeScript + Tailwind + Prisma, deployed to
-**Cloudflare Workers + D1** via OpenNext.
+This repo has two parts:
 
-## What the app does
+| Part | Stack | Role |
+| --- | --- | --- |
+| `./` (Next.js) | Next.js 16 + TypeScript + Tailwind | The **client** — the TV screen and the phone views. |
+| `./server` (Python) | FastAPI + WebSockets | The **game server** — all state, plus the random scenario/role/clue **generation engine**. |
 
-- **Players** log in with a personal code and get:
-  - their private **character sheet** (dossier),
-  - the shared **Last Night** timeline,
-  - the current **search permit** (which rooms are open this phase),
-  - their **found clues** (KEEP clues have a "Share with the house" button),
-  - the **house feed** of public announcements,
-  - **accusation ballots** when the GM opens a vote.
-- **Scanning a clue QR** reveals it and is **phase-gated** (a Phase-4 clue won't open in
-  Phase 2). **ANNOUNCE** clues auto-broadcast to everyone; **KEEP** clues stay private to
-  the finder and only notify the GM.
-- **Game master dashboard** (`/gm`, login `GM-ALEX`): a phase stepper (unlocks rooms),
-  the scripted reveal + Solomon-line library (one tap pushes a line to all phones), a live
-  discovery feed, the clue tracker, the suspect roster (with true roles), and the two
-  accusation ballots with live tallies.
-- **Printable QR sheet** (`/gm/qr`) grouped by phase — print, cut out, and hide.
+The two talk over a single WebSocket. The server is authoritative; the client
+just renders the latest state and sends player actions.
 
-Default logins (from the seed): GM `GM-ALEX`; players `HANK-01`, `CATHERINE-02`,
-`VIVI-03`, `SEBASTIAN-04`, `BELLA-05`, `BEAU-06`, `EDEN-07`, `LEVI-08`, `CODY-09`.
+## Design highlights
 
-## Local development
+- **No AI / API token anywhere.** Every scenario, role assignment and clue pull
+  is produced by a seedable, pure-Python RNG (`server/app/rng.py`,
+  `server/app/engine.py`). Seeds make whole games reproducible and testable.
+- **The Narrator talks.** Narrator lines are generated server-side and spoken on
+  the TV with the browser's built-in **Web Speech API** — audio, zero cost, no
+  token, works offline.
+- **Real-time.** TV and phones stay in sync over WebSockets, which drives live
+  timers, the hidden hotseat votes, and the public live final-vote board.
+- **Content is pluggable and not bundled.** The character and clue **banks ship
+  empty** — only their schema, loaders and selection rules are here. Drop
+  authored JSON into `server/app/data/banks/` to fill them; until then the game
+  runs end-to-end on clearly-labelled `[PLACEHOLDER]` content. See
+  `server/README.md`.
 
-Local dev uses a SQLite file (`prisma/dev.db`) through Prisma's libSQL adapter.
+## Run it locally
+
+**1. Start the game server** (Python 3.10+):
+
+```bash
+cd server
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+**2. Start the client** (in another terminal):
 
 ```bash
 npm install
-npm run db:migrate    # create the local SQLite db
-npm run db:seed       # load the game (prints all login codes)
-npm run dev           # http://localhost:3000
+echo 'NEXT_PUBLIC_GAME_WS_URL="ws://localhost:8000/ws"' > .env.local
+npm run dev          # http://localhost:3000
 ```
 
-Useful scripts: `npm run db:studio` (DB browser), `npm run db:reset` (drop + reseed).
+**3. Play.** Open `http://localhost:3000` on the "TV" (any browser), click
+**Host on this screen**, and a room code appears. On each phone, open the same
+site, enter the code, pick a name, and take a seat. With 4+ players the host can
+begin.
 
-## Architecture notes
+## How a game flows (GDD)
 
-- Prisma runs **engine-free** (no Rust binary), so it needs a driver adapter everywhere.
-  There are two generated clients (see `prisma/schema.prisma`): the default Node client
-  (used locally via libSQL) and a `workerd`-targeted client in `src/generated/prisma`
-  (used on Cloudflare via the D1 adapter, loading its query-compiler WASM as a module).
-- `src/lib/prisma.ts#getDb()` picks the right one: on Workers it binds to the request's
-  D1 database; otherwise it uses the local libSQL file. All server code calls
-  `await getDb()` rather than importing a shared instance.
-- Sessions are signed cookies (`iron-session`), keyed to a per-character login code.
+Lobby → Narrator opens (story + private character sheets) → Introductions (read
+aloud from the TV) → Rules → **3 rounds** of *Clue Drop → Mingle → Hotseat Vote
+→ Interrogation* → Final Vote (drag M/A tokens on a live public board) → the
+Narrator reveals the truth. Round 2's clue drop is **tampered** by the murderer;
+Round 3 grants the murderer a one-time **ban**; and once per game the innocents
+can trigger a 30-second **Emergency Vote**.
 
-## Deploying to Cloudflare (deadinthewater.caydenfarris.net)
+## Adding characters and clues
 
-Prerequisites: a Cloudflare account and `npx wrangler login`.
+The banks are intentionally empty. To author content, drop JSON files into:
 
-**1. Create the D1 database** and paste the printed `database_id` into `wrangler.jsonc`
-(replacing `REPLACE_WITH_YOUR_D1_DATABASE_ID`):
+- `server/app/data/banks/characters/` — the designated cast (20–25 suggested).
+- `server/app/data/banks/clues/` — the clue bank, tagged `noise` / `redirect` /
+  `thread` and optionally scoped to a death location / time of death.
+
+Each directory has a README with the exact schema and an example. The engine
+picks up new files on restart.
+
+## Tests
 
 ```bash
-npx wrangler d1 create dead-in-the-water
+cd server && python3 -m pytest -q
 ```
 
-**2. Apply the schema and seed to the remote D1:**
+Covers role assignment, character rotation, clue ratios, determinism, stage
+progression, and vote resolution (hotseat, final M/A tokens, emergency vote).
 
-```bash
-npm run d1:migrate:remote   # applies cf-migrations/0001_init.sql
-npm run d1:seed:remote      # applies cf-seed.sql (the cast, clues, reveals)
-```
+## Deploying
 
-> `cf-seed.sql` is committed and ready to use. To regenerate it (e.g. after editing the
-> cast or clues in `prisma/seed.ts`), run `npm run db:reset && npm run db:export-d1`.
-
-**3. Set the session secret** (32+ chars):
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" | npx wrangler secret put SESSION_SECRET
-```
-
-`NEXT_PUBLIC_BASE_URL` is already set to `https://deadinthewater.caydenfarris.net` in `wrangler.jsonc`
-(used to build the QR-code links).
-
-**4. Deploy:**
-
-```bash
-npm run cf:deploy
-```
-
-**5. Point the domain.** In the Cloudflare dashboard, add `deadinthewater.caydenfarris.net` as a custom
-domain / route for the Worker.
-
-### Local Cloudflare preview (optional)
-
-To run the exact Workers runtime locally against a local D1:
-
-```bash
-npm run d1:migrate:local
-npm run d1:seed:local
-echo 'SESSION_SECRET="local_dev_secret_at_least_32_characters"' > .dev.vars
-npm run cf:preview
-```
-
-See `.env.example` for environment variables.
+- **Client:** deploys to Cloudflare Workers via OpenNext (`npm run cf:deploy`).
+  Set `NEXT_PUBLIC_GAME_WS_URL` (in `wrangler.jsonc` vars) to your server's
+  public `wss://…/ws`.
+- **Server:** a long-lived Python WebSocket process — host it anywhere that runs
+  one (Render, Fly.io, Railway, a VPS). Cloudflare Workers can't host it, hence
+  the split.
