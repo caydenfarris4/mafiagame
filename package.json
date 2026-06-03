@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck:worker": "tsc -p src/worker/tsconfig.json",
     "cf:typegen": "wrangler types",
-    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "preview": "next build && wrangler dev",
+    "deploy": "next build && wrangler deploy"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -17,7 +18,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.19.11",
+    "@cloudflare/workers-types": "^4.20250109.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

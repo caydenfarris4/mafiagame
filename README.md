@@ -1,62 +1,78 @@
 # Dead in the Water
 
 A **Jackbox-style social-deduction party game** for 4–10 players, built to the
-[Game Design Document](#). One screen hosts the game (a TV or laptop); everyone
-else plays from their phone by entering a 4-character room code — no app to
-install. One player is secretly the murderer (two, with an accomplice, at 6+
-players); the room has ~30 minutes of clue drops, mingling, interrogations and
-votes to catch them before the police arrive. A talking **Narrator** (the
-Detective) drives the whole thing aloud on the TV.
+Game Design Document. One screen hosts the game (a TV or laptop); everyone else
+plays from their phone by entering a 4-character room code — no app to install.
+One player is secretly the murderer (two, with an accomplice, at 6+ players);
+the room has ~30 minutes of clue drops, mingling, interrogations and votes to
+catch them before the police arrive. A talking **Narrator** (the Detective)
+drives the whole thing aloud on the TV.
 
-This repo has two parts:
+Everything is **TypeScript on Cloudflare** — one deploy, one platform:
 
-| Part | Stack | Role |
-| --- | --- | --- |
-| `./` (Next.js) | Next.js 16 + TypeScript + Tailwind | The **client** — the TV screen and the phone views. |
-| `./server` (Python) | FastAPI + WebSockets | The **game server** — all state, plus the random scenario/role/clue **generation engine**. |
+| Part | What it is |
+| --- | --- |
+| `src/app` (Next.js) | The **UI** — the TV screen (`/tv`) and the phone view (`/play`). Exported to static HTML/JS. |
+| `src/worker` (Cloudflare Worker + Durable Object) | The **game server** — all state, the WebSocket, and the random generation engine. |
 
-The two talk over a single WebSocket. The server is authoritative; the client
-just renders the latest state and sends player actions.
+The Worker serves the static UI *and* routes `/ws` to a **Durable Object**
+(Cloudflare's "one stays-alive object per room" primitive). Each room is one
+Durable Object holding its game state and all the phones' WebSockets in memory —
+no database. Same origin for UI and socket, so there's no CORS and nothing else
+to host.
 
 ## Design highlights
 
 - **No AI / API token anywhere.** Every scenario, role assignment and clue pull
-  is produced by a seedable, pure-Python RNG (`server/app/rng.py`,
-  `server/app/engine.py`). Seeds make whole games reproducible and testable.
-- **The Narrator talks.** Narrator lines are generated server-side and spoken on
-  the TV with the browser's built-in **Web Speech API** — audio, zero cost, no
-  token, works offline.
-- **Real-time.** TV and phones stay in sync over WebSockets, which drives live
-  timers, the hidden hotseat votes, and the public live final-vote board.
+  comes from a seedable PRNG (`src/worker/game/rng.ts`, `engine.ts`). Seeds make
+  whole games reproducible and testable.
+- **The Narrator talks.** Narrator lines are generated in the Worker and spoken
+  on the TV with the browser's **Web Speech API** — audio, zero cost, no token,
+  works offline.
+- **Real-time.** TV and phones sync over one WebSocket per room, driving the
+  live timers, the hidden hotseat votes, and the public live final-vote board.
+  Timers are client-driven: the server sends an absolute `endsAt`, the TV counts
+  down locally and advances at zero (the host can also skip).
 - **Content is pluggable and not bundled.** The character and clue **banks ship
-  empty** — only their schema, loaders and selection rules are here. Drop
-  authored JSON into `server/app/data/banks/` to fill them; until then the game
-  runs end-to-end on clearly-labelled `[PLACEHOLDER]` content. See
-  `server/README.md`.
+  empty** (`src/worker/game/data/characters.ts`, `clues.ts`) — only their types,
+  loaders and selection rules are here. Fill the arrays and the game uses them;
+  until then it runs end-to-end on clearly-labelled `[PLACEHOLDER]` content.
+
+## Code map (`src/worker/game`)
+
+| File | Role |
+| --- | --- |
+| `rng.ts` | Seedable PRNG + seed/room-code generation (the "tokens"). |
+| `engine.ts` | Generation: roles, character rotation, scenario, clue pulls. |
+| `game.ts` | The live state machine: stages, the 3-round loop, votes, reveal. |
+| `serialize.ts` | Builds the TV vs. per-phone payloads (the trust boundary). |
+| `narrator.ts` | The Detective's spoken lines. |
+| `data/scenarios.ts` | Fixed death-location / time-of-death axes. |
+| `data/characters.ts`, `data/clues.ts` | The **empty** banks you fill in. |
+| `../GameRoom.ts` | The Durable Object: connections, sitting memory, broadcast. |
+| `../index.ts` | Worker entry: routes `/ws` to a room, else serves the UI. |
 
 ## Run it locally
 
-**1. Start the game server** (Python 3.10+):
+Two ways:
 
-```bash
-cd server
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-**2. Start the client** (in another terminal):
+**Fast UI iteration** (hot reload, but no live game — `/ws` isn't served):
 
 ```bash
 npm install
-echo 'NEXT_PUBLIC_GAME_WS_URL="ws://localhost:8000/ws"' > .env.local
 npm run dev          # http://localhost:3000
 ```
 
-**3. Play.** Open `http://localhost:3000` on the "TV" (any browser), click
-**Host on this screen**, and a room code appears. On each phone, open the same
-site, enter the code, pick a name, and take a seat. With 4+ players the host can
-begin.
+**The full game locally** (real Worker + Durable Object via Wrangler):
+
+```bash
+npm install
+npm run preview      # builds the UI, then runs wrangler dev on :8787
+```
+
+Then open `http://localhost:8787` on the "TV", click **Host on this screen**,
+and a room code appears. On each phone (or browser tab), open the same address,
+enter the code, pick a name, and take a seat. With 4+ players the host can begin.
 
 ## How a game flows (GDD)
 
@@ -69,29 +85,33 @@ can trigger a 30-second **Emergency Vote**.
 
 ## Adding characters and clues
 
-The banks are intentionally empty. To author content, drop JSON files into:
+The banks are intentionally empty. Open these files and push objects into the
+arrays (each has the full type and an example in comments):
 
-- `server/app/data/banks/characters/` — the designated cast (20–25 suggested).
-- `server/app/data/banks/clues/` — the clue bank, tagged `noise` / `redirect` /
-  `thread` and optionally scoped to a death location / time of death.
+- `src/worker/game/data/characters.ts` — the designated cast (20–25 suggested).
+- `src/worker/game/data/clues.ts` — clues tagged `noise` / `redirect` / `thread`,
+  optionally scoped to a death location / time of death.
 
-Each directory has a README with the exact schema and an example. The engine
-picks up new files on restart.
+Rebuild/redeploy and the engine uses them automatically.
 
-## Tests
+## Checks
 
 ```bash
-cd server && python3 -m pytest -q
+npm run lint              # lint the whole repo
+npm run typecheck:worker  # type-check the Worker + game engine
+npm run build             # export the static UI to ./out
+npx wrangler deploy --dry-run   # bundle + validate the Worker and bindings
 ```
-
-Covers role assignment, character rotation, clue ratios, determinism, stage
-progression, and vote resolution (hotseat, final M/A tokens, emergency vote).
 
 ## Deploying
 
-- **Client:** deploys to Cloudflare Workers via OpenNext (`npm run cf:deploy`).
-  Set `NEXT_PUBLIC_GAME_WS_URL` (in `wrangler.jsonc` vars) to your server's
-  public `wss://…/ws`.
-- **Server:** a long-lived Python WebSocket process — host it anywhere that runs
-  one (Render, Fly.io, Railway, a VPS). Cloudflare Workers can't host it, hence
-  the split.
+One platform, one command:
+
+```bash
+npm run deploy   # next build (static export) + wrangler deploy
+```
+
+Durable Objects are included on the Workers Paid plan (and SQLite-backed DO
+classes also work on Free). The `wrangler.jsonc` already declares the
+`GameRoom` class and its migration, so the first deploy provisions everything.
+After deploying, point your Cloudflare custom domain/route at the Worker.

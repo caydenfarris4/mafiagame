@@ -1,27 +1,33 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mafiagame",
-  "main": ".open-next/worker.js",
-  // Build the OpenNext worker before any deploy/upload. This lets Cloudflare's
-  // git-connected Workers Builds (and `wrangler deploy`) generate
-  // .open-next/worker.js automatically — no separate build command needed.
-  "build": {
-    "command": "npx opennextjs-cloudflare build"
-  },
+  "main": "src/worker/index.ts",
   "compatibility_date": "2025-03-25",
-  "compatibility_flags": ["nodejs_compat"],
+  // Serve the exported Next.js UI (./out) as static assets. Requests that match
+  // a file are served directly; everything else (i.e. /ws) hits the Worker.
   "assets": {
     "binding": "ASSETS",
-    "directory": ".open-next/assets"
+    "directory": "./out"
   },
   "observability": {
     "enabled": true
   },
-  "vars": {
-    // The Python game server's WebSocket endpoint. The Next.js app is only the
-    // TV + phone UI; all game state lives in ./server. Point this at the
-    // deployed server (e.g. wss://your-game-server.example.com/ws). The Worker
-    // can't host the long-lived Python WebSocket server itself.
-    "NEXT_PUBLIC_GAME_WS_URL": "ws://localhost:8000/ws"
-  }
+  // One Durable Object class = one live room (keyed by room code). Holds the
+  // game state and the room's WebSockets in memory.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAME_ROOM",
+        "class_name": "GameRoom"
+      }
+    ]
+  },
+  // SQLite-backed DO class (works on both Free and Paid plans). We don't use
+  // storage today, but this is the forward-compatible declaration.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GameRoom"]
+    }
+  ]
 }

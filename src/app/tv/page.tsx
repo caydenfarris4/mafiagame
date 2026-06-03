@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Atmosphere, Bracketed, Wordmark } from "@/components/Atmosphere";
 import Narrator from "@/components/Narrator";
 import { useGame, type GameState } from "@/lib/useGame";
@@ -21,8 +21,26 @@ const STAGE_LABELS: Record<string, string> = {
 
 export default function TvPage() {
   const [muted, setMuted] = useState(false);
-  const onOpen = useCallback((send: (m: object) => void) => send({ type: "create" }), []);
-  const { state, status, send } = useGame({ onOpen });
+  const { state, status, send } = useGame({ role: "tv" });
+
+  const endsAt = (state?.endsAt as number | null | undefined) ?? null;
+  const secondsLeft = useCountdown(endsAt);
+
+  // Timed stages auto-advance at the deadline (the host can also skip early).
+  const firedRef = useRef("");
+  useEffect(() => {
+    if (!state) return;
+    const stage = state.stage as string;
+    const timed = stage === "mingle" || stage === "interrogation" || stage === "final_vote";
+    const emergency = (state.emergency as { active: boolean } | undefined)?.active;
+    if ((timed || emergency) && endsAt && secondsLeft === 0) {
+      const key = `${stage}-${state.roundNumber as number}-${endsAt}`;
+      if (firedRef.current !== key) {
+        firedRef.current = key;
+        send({ type: "advance" });
+      }
+    }
+  }, [state, endsAt, secondsLeft, send]);
 
   if (!state || status !== "open") {
     return (
@@ -53,9 +71,7 @@ export default function TvPage() {
             )}
           </div>
           <div className="flex items-center gap-4">
-            {typeof state.secondsLeft === "number" && (state.secondsLeft as number) > 0 && (
-              <Timer seconds={state.secondsLeft as number} />
-            )}
+            {secondsLeft !== null && secondsLeft > 0 && <Timer seconds={secondsLeft} />}
             <button
               onClick={() => setMuted((m) => !m)}
               className="rounded border border-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted hover:text-text"
@@ -324,6 +340,20 @@ function Timer({ seconds }: { seconds: number }) {
       {m}:{String(s).padStart(2, "0")}
     </div>
   );
+}
+
+// A local 1-second countdown derived from an absolute deadline (ms epoch). The
+// server sends `endsAt`; the TV ticks locally so the clock is smooth without
+// per-second broadcasts.
+function useCountdown(endsAt: number | null): number | null {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!endsAt) return;
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [endsAt]);
+  if (!endsAt) return null;
+  return Math.max(0, Math.round((endsAt - now) / 1000));
 }
 
 function Shell({ children }: { children: React.ReactNode }) {

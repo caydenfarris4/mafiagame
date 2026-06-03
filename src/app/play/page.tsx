@@ -48,7 +48,7 @@ function PlayInner() {
     [storageKey],
   );
 
-  const { state, status, error, send, clearError } = useGame({ onOpen, onMessage });
+  const { state, status, error, send, clearError } = useGame({ role: "player", code, onOpen, onMessage });
 
   const submitJoin = (e: React.FormEvent) => {
     e.preventDefault();

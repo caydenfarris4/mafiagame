@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+# static export output (rebuilt by `npm run build` / `npm run deploy`)
 /out/
 
 # production
@@ -41,14 +42,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# cloudflare / opennext build output
+# cloudflare build output
 /.open-next/
 /.wrangler/
 .dev.vars
-
-# python game server
-server/.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
-.python-version
