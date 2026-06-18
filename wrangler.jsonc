@@ -1,45 +1,33 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mafiagame",
-  "main": ".open-next/worker.js",
-  // Build the OpenNext worker before any deploy/upload. This lets Cloudflare's
-  // git-connected Workers Builds (and `wrangler deploy`) generate
-  // .open-next/worker.js automatically — no separate build command needed.
-  "build": {
-    "command": "npx opennextjs-cloudflare build"
-  },
+  "main": "src/worker/index.ts",
   "compatibility_date": "2025-03-25",
-  "compatibility_flags": ["nodejs_compat"],
+  // Serve the exported Next.js UI (./out) as static assets. Requests that match
+  // a file are served directly; everything else (i.e. /ws) hits the Worker.
   "assets": {
     "binding": "ASSETS",
-    "directory": ".open-next/assets"
+    "directory": "./out"
   },
   "observability": {
     "enabled": true
   },
-  // The D1 database the app talks to. Create it with:
-  //   npx wrangler d1 create dead-in-the-water
-  // then paste the printed database_id below.
-  "d1_databases": [
+  // One Durable Object class = one live room (keyed by room code). Holds the
+  // game state and the room's WebSockets in memory.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAME_ROOM",
+        "class_name": "GameRoom"
+      }
+    ]
+  },
+  // SQLite-backed DO class (works on both Free and Paid plans). We don't use
+  // storage today, but this is the forward-compatible declaration.
+  "migrations": [
     {
-      "binding": "DB",
-      "database_name": "dead-in-the-water",
-      "database_id": "dbcc04fc-42f9-4119-a897-c94314c67cfd",
-      "migrations_dir": "cf-migrations"
+      "tag": "v1",
+      "new_sqlite_classes": ["GameRoom"]
     }
-  ],
-  "vars": {
-    // Public base URL used to build QR links.
-    "NEXT_PUBLIC_BASE_URL": "https://deadinthewater.caydenfarris.net",
-    // Countries (ISO-2, comma-separated) allowed to log in. A login from any
-    // other known country is blocked, keeping bots that scrape the public URL
-    // out of the game. Set this to wherever the party is held — US + CA here,
-    // since the lake house is in northern Washington near the Canadian border
-    // (border-area carriers sometimes geolocate a US phone as CA, or vice versa).
-    "ALLOWED_COUNTRIES": "US,CA",
-    // Cookie signing key. Fine to keep here for a private repo / one-weekend
-    // party game. To harden later: remove this line and instead run
-    //   npx wrangler secret put SESSION_SECRET
-    "SESSION_SECRET": "2307eaf85d607f5645d44c6d0260ab9d97876e52e9accdb799ce0851d3d7e55a"
-  }
+  ]
 }

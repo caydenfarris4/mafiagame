@@ -1,106 +1,117 @@
 # Dead in the Water
 
-A digital companion for the **"Dead in the Water"** murder-mystery party game, built
-for the Whitfield lake house weekend at **deadinthewater.caydenfarris.net**. Each guest logs in as their
-character, reads their private dossier, walks the house scanning QR-code clues, and the
-game master (Alexander) runs the five phases from a control dashboard.
+A **Jackbox-style social-deduction party game** for 4–10 players, built to the
+Game Design Document. One screen hosts the game (a TV or laptop); everyone else
+plays from their phone by entering a 4-character room code — no app to install.
+One player is secretly the murderer (two, with an accomplice, at 6+ players);
+the room has ~30 minutes of clue drops, mingling, interrogations and votes to
+catch them before the police arrive. A talking **Narrator** (the Detective)
+drives the whole thing aloud on the TV.
 
-Built with Next.js (App Router) + TypeScript + Tailwind + Prisma, deployed to
-**Cloudflare Workers + D1** via OpenNext.
+Everything is **TypeScript on Cloudflare** — one deploy, one platform:
 
-## What the app does
+| Part | What it is |
+| --- | --- |
+| `src/app` (Next.js) | The **UI** — the TV screen (`/tv`) and the phone view (`/play`). Exported to static HTML/JS. |
+| `src/worker` (Cloudflare Worker + Durable Object) | The **game server** — all state, the WebSocket, and the random generation engine. |
 
-- **Players** log in with a personal code and get:
-  - their private **character sheet** (dossier),
-  - the shared **Last Night** timeline,
-  - the current **search permit** (which rooms are open this phase),
-  - their **found clues** (KEEP clues have a "Share with the house" button),
-  - the **house feed** of public announcements,
-  - **accusation ballots** when the GM opens a vote.
-- **Scanning a clue QR** reveals it and is **phase-gated** (a Phase-4 clue won't open in
-  Phase 2). **ANNOUNCE** clues auto-broadcast to everyone; **KEEP** clues stay private to
-  the finder and only notify the GM.
-- **Game master dashboard** (`/gm`, login `GM-ALEX`): a phase stepper (unlocks rooms),
-  the scripted reveal + Solomon-line library (one tap pushes a line to all phones), a live
-  discovery feed, the clue tracker, the suspect roster (with true roles), and the two
-  accusation ballots with live tallies.
-- **Printable QR sheet** (`/gm/qr`) grouped by phase — print, cut out, and hide.
+The Worker serves the static UI *and* routes `/ws` to a **Durable Object**
+(Cloudflare's "one stays-alive object per room" primitive). Each room is one
+Durable Object holding its game state and all the phones' WebSockets in memory —
+no database. Same origin for UI and socket, so there's no CORS and nothing else
+to host.
 
-Default logins (from the seed): GM `GM-ALEX`; players `HANK-01`, `CATHERINE-02`,
-`VIVI-03`, `SEBASTIAN-04`, `BELLA-05`, `BEAU-06`, `EDEN-07`, `LEVI-08`, `CODY-09`.
+## Design highlights
 
-## Local development
+- **No AI / API token anywhere.** Every scenario, role assignment and clue pull
+  comes from a seedable PRNG (`src/worker/game/rng.ts`, `engine.ts`). Seeds make
+  whole games reproducible and testable.
+- **The Narrator talks.** Narrator lines are generated in the Worker and spoken
+  on the TV with the browser's **Web Speech API** — audio, zero cost, no token,
+  works offline.
+- **Real-time.** TV and phones sync over one WebSocket per room, driving the
+  live timers, the hidden hotseat votes, and the public live final-vote board.
+  Timers are client-driven: the server sends an absolute `endsAt`, the TV counts
+  down locally and advances at zero (the host can also skip).
+- **Content is pluggable and not bundled.** The character and clue **banks ship
+  empty** (`src/worker/game/data/characters.ts`, `clues.ts`) — only their types,
+  loaders and selection rules are here. Fill the arrays and the game uses them;
+  until then it runs end-to-end on clearly-labelled `[PLACEHOLDER]` content.
 
-Local dev uses a SQLite file (`prisma/dev.db`) through Prisma's libSQL adapter.
+## Code map (`src/worker/game`)
+
+| File | Role |
+| --- | --- |
+| `rng.ts` | Seedable PRNG + seed/room-code generation (the "tokens"). |
+| `engine.ts` | Generation: roles, character rotation, scenario, clue pulls. |
+| `game.ts` | The live state machine: stages, the 3-round loop, votes, reveal. |
+| `serialize.ts` | Builds the TV vs. per-phone payloads (the trust boundary). |
+| `narrator.ts` | The Detective's spoken lines. |
+| `data/scenarios.ts` | Fixed death-location / time-of-death axes. |
+| `data/characters.ts`, `data/clues.ts` | The **empty** banks you fill in. |
+| `../GameRoom.ts` | The Durable Object: connections, sitting memory, broadcast. |
+| `../index.ts` | Worker entry: routes `/ws` to a room, else serves the UI. |
+
+## Run it locally
+
+Two ways:
+
+**Fast UI iteration** (hot reload, but no live game — `/ws` isn't served):
 
 ```bash
 npm install
-npm run db:migrate    # create the local SQLite db
-npm run db:seed       # load the game (prints all login codes)
-npm run dev           # http://localhost:3000
+npm run dev          # http://localhost:3000
 ```
 
-Useful scripts: `npm run db:studio` (DB browser), `npm run db:reset` (drop + reseed).
-
-## Architecture notes
-
-- Prisma runs **engine-free** (no Rust binary), so it needs a driver adapter everywhere.
-  There are two generated clients (see `prisma/schema.prisma`): the default Node client
-  (used locally via libSQL) and a `workerd`-targeted client in `src/generated/prisma`
-  (used on Cloudflare via the D1 adapter, loading its query-compiler WASM as a module).
-- `src/lib/prisma.ts#getDb()` picks the right one: on Workers it binds to the request's
-  D1 database; otherwise it uses the local libSQL file. All server code calls
-  `await getDb()` rather than importing a shared instance.
-- Sessions are signed cookies (`iron-session`), keyed to a per-character login code.
-
-## Deploying to Cloudflare (deadinthewater.caydenfarris.net)
-
-Prerequisites: a Cloudflare account and `npx wrangler login`.
-
-**1. Create the D1 database** and paste the printed `database_id` into `wrangler.jsonc`
-(replacing `REPLACE_WITH_YOUR_D1_DATABASE_ID`):
+**The full game locally** (real Worker + Durable Object via Wrangler):
 
 ```bash
-npx wrangler d1 create dead-in-the-water
+npm install
+npm run preview      # builds the UI, then runs wrangler dev on :8787
 ```
 
-**2. Apply the schema and seed to the remote D1:**
+Then open `http://localhost:8787` on the "TV", click **Host on this screen**,
+and a room code appears. On each phone (or browser tab), open the same address,
+enter the code, pick a name, and take a seat. With 4+ players the host can begin.
+
+## How a game flows (GDD)
+
+Lobby → Narrator opens (story + private character sheets) → Introductions (read
+aloud from the TV) → Rules → **3 rounds** of *Clue Drop → Mingle → Hotseat Vote
+→ Interrogation* → Final Vote (drag M/A tokens on a live public board) → the
+Narrator reveals the truth. Round 2's clue drop is **tampered** by the murderer;
+Round 3 grants the murderer a one-time **ban**; and once per game the innocents
+can trigger a 30-second **Emergency Vote**.
+
+## Adding characters and clues
+
+The banks are intentionally empty. Open these files and push objects into the
+arrays (each has the full type and an example in comments):
+
+- `src/worker/game/data/characters.ts` — the designated cast (20–25 suggested).
+- `src/worker/game/data/clues.ts` — clues tagged `noise` / `redirect` / `thread`,
+  optionally scoped to a death location / time of death.
+
+Rebuild/redeploy and the engine uses them automatically.
+
+## Checks
 
 ```bash
-npm run d1:migrate:remote   # applies cf-migrations/0001_init.sql
-npm run d1:seed:remote      # applies cf-seed.sql (the cast, clues, reveals)
+npm run lint              # lint the whole repo
+npm run typecheck:worker  # type-check the Worker + game engine
+npm run build             # export the static UI to ./out
+npx wrangler deploy --dry-run   # bundle + validate the Worker and bindings
 ```
 
-> `cf-seed.sql` is committed and ready to use. To regenerate it (e.g. after editing the
-> cast or clues in `prisma/seed.ts`), run `npm run db:reset && npm run db:export-d1`.
+## Deploying
 
-**3. Set the session secret** (32+ chars):
+One platform, one command:
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" | npx wrangler secret put SESSION_SECRET
+npm run deploy   # next build (static export) + wrangler deploy
 ```
 
-`NEXT_PUBLIC_BASE_URL` is already set to `https://deadinthewater.caydenfarris.net` in `wrangler.jsonc`
-(used to build the QR-code links).
-
-**4. Deploy:**
-
-```bash
-npm run cf:deploy
-```
-
-**5. Point the domain.** In the Cloudflare dashboard, add `deadinthewater.caydenfarris.net` as a custom
-domain / route for the Worker.
-
-### Local Cloudflare preview (optional)
-
-To run the exact Workers runtime locally against a local D1:
-
-```bash
-npm run d1:migrate:local
-npm run d1:seed:local
-echo 'SESSION_SECRET="local_dev_secret_at_least_32_characters"' > .dev.vars
-npm run cf:preview
-```
-
-See `.env.example` for environment variables.
+Durable Objects are included on the Workers Paid plan (and SQLite-backed DO
+classes also work on Free). The `wrangler.jsonc` already declares the
+`GameRoom` class and its migration, so the first deploy provisions everything.
+After deploying, point your Cloudflare custom domain/route at the Worker.
