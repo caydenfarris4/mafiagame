@@ -7,12 +7,11 @@
 // whole game runs before the real cast/clues are authored.
 
 import { CHARACTER_BANK } from "./data/characters";
-import { CLUE_BANK, clueFits, THREADS_PER_GAME } from "./data/clues";
+import { cluesForScenario, SCENARIO_CLUES, type ScenarioClue, type ScenarioClues } from "./data/clues";
 import { DEATH_LOCATIONS, TIMES_OF_DEATH } from "./data/scenarios";
 import type {
   Assignment,
   Character,
-  Clue,
   ClueType,
   GameContent,
   GeneratedClue,
@@ -36,12 +35,12 @@ export function hasAccomplice(numPlayers: number): boolean {
 
 export class GameEngine {
   private characters: Character[];
-  private clues: Clue[];
+  private scenarioClues: ScenarioClues[];
 
-  // Banks default to the (currently empty) authored arrays; tests inject fakes.
-  constructor(characters: Character[] = CHARACTER_BANK, clues: Clue[] = CLUE_BANK) {
+  // Banks default to the authored arrays; tests inject fakes.
+  constructor(characters: Character[] = CHARACTER_BANK, scenarioClues: ScenarioClues[] = SCENARIO_CLUES) {
     this.characters = characters;
-    this.clues = clues;
+    this.scenarioClues = scenarioClues;
   }
 
   generate(
@@ -73,10 +72,13 @@ export class GameEngine {
 
     const murdererId = playerIds.find((pid) => roles[pid] === "murderer")!;
     const accompliceId = playerIds.find((pid) => roles[pid] === "accomplice") ?? null;
-    const murdererChar = assignments.find((a) => a.playerId === murdererId)!.character;
-    const innocentChars = assignments.filter((a) => a.role === "innocent").map((a) => a.character);
+    // Clues point at people by name, assigned now: threads at the murderer,
+    // redirects/noise at innocents. (Clues aren't tied to characters, so the
+    // same clue can implicate whoever it's handed to this game.)
+    const murdererName = assignments.find((a) => a.playerId === murdererId)!.displayName;
+    const innocentNames = assignments.filter((a) => a.role === "innocent").map((a) => a.displayName);
 
-    const rounds = this.buildRounds(rng, location.key, time.key, murdererChar, innocentChars);
+    const rounds = this.buildRounds(rng, location.key, time.key, murdererName, innocentNames);
 
     return {
       seed: rng.seed,
@@ -133,71 +135,67 @@ export class GameEngine {
     rng: GameRNG,
     locationKey: string,
     timeKey: string,
-    murderer: Character,
-    innocents: Character[],
+    murdererName: string,
+    innocentNames: string[],
   ): RoundContent[] {
-    // Each round is a standard Noise + Redirect + Thread trio (section 6).
-    const threads = this.pull(rng, "thread", 3, locationKey, timeKey, [murderer]);
-    const redirects = this.pull(rng, "redirect", 3, locationKey, timeKey, innocents);
-    const noises = this.pull(rng, "noise", 3, locationKey, timeKey, innocents.length ? innocents : [murderer]);
+    const pool = cluesForScenario(this.scenarioClues, locationKey, timeKey);
+    const byType = (t: ClueType) => pool.filter((c) => c.type === t);
+
+    // Each round is a Noise + Redirect + Thread trio (section 6). We draw a 4th
+    // redirect as the spare the Round 2 tamper swaps in for that round's noise.
+    const aimAtMurderer = () => murdererName;
+    const aimAtInnocent = () => (innocentNames.length ? rng.choice(innocentNames) : "someone");
+
+    const threads = this.take(rng, byType("thread"), 3, "thread", aimAtMurderer);
+    const redirects = this.take(rng, byType("redirect"), 4, "redirect", aimAtInnocent);
+    const noises = this.take(rng, byType("noise"), 3, "noise", aimAtInnocent);
 
     const rounds: RoundContent[] = [];
     for (let r = 0; r < 3; r++) {
       const trio = [threads[r], redirects[r], noises[r]].map((c) => renumber(c, r + 1));
       rounds.push({ roundNumber: r + 1, clues: rng.shuffled(trio), tampered: false });
     }
-    this.applyRound2Tamper(rng, rounds, locationKey, timeKey, innocents);
+
+    // GDD section 6: the murderer swaps Round 2's noise clue for an extra
+    // redirect — final spread 3 thread / 4 redirect / 2 noise.
+    const rnd = rounds[1];
+    const noiseClue = rnd.clues.find((c) => c.type === "noise");
+    if (noiseClue) {
+      const replacement = renumber(redirects[3], 2);
+      rnd.clues = rnd.clues.map((c) => (c.id === noiseClue.id ? replacement : c));
+      rnd.tampered = true;
+      rnd.replacedOut = noiseClue;
+      rnd.replacedIn = replacement;
+    }
     return rounds;
   }
 
-  // GDD section 6: murderer swaps Round 2's noise clue for a redirect.
-  private applyRound2Tamper(
+  // Draw `count` scenario clues of one type, filling each clue's `{name}`
+  // placeholder with the character it points at. Falls back to labelled
+  // placeholders to guarantee the count when a scenario isn't fully authored.
+  private take(
     rng: GameRNG,
-    rounds: RoundContent[],
-    locationKey: string,
-    timeKey: string,
-    innocents: Character[],
-  ): void {
-    const rnd = rounds[1];
-    const noiseClue = rnd.clues.find((c) => c.type === "noise");
-    if (!noiseClue) return; // no noise this round; nothing to tamper
-    const replacement = renumber(this.pull(rng, "redirect", 1, locationKey, timeKey, innocents)[0], 2);
-    rnd.clues = rnd.clues.map((c) => (c.id === noiseClue.id ? replacement : c));
-    rnd.tampered = true;
-    rnd.replacedOut = noiseClue;
-    rnd.replacedIn = replacement;
-  }
-
-  // Draw `count` clues of a type that fit the scenario, falling back to
-  // labelled placeholders to guarantee the count.
-  private pull(
-    rng: GameRNG,
-    clueType: ClueType,
+    pool: ScenarioClue[],
     count: number,
-    locationKey: string,
-    timeKey: string,
-    owners: Character[] | null,
+    clueType: ClueType,
+    nameFor: () => string,
   ): GeneratedClue[] {
-    const ownerKeys = owners ? new Set(owners.map((c) => c.key)) : null;
-    const pool = this.clues.filter(
-      (c) =>
-        c.type === clueType &&
-        clueFits(c, locationKey, timeKey) &&
-        (ownerKeys === null || ownerKeys.has(c.characterKey)),
-    );
-    const chosenPool = rng.shuffled(pool);
+    const shuffled = rng.shuffled(pool);
     const out: GeneratedClue[] = [];
     for (let i = 0; i < count; i++) {
-      if (i < chosenPool.length) {
+      if (i < shuffled.length) {
+        const text = shuffled[i].text.includes("{name}")
+          ? shuffled[i].text.replaceAll("{name}", nameFor())
+          : shuffled[i].text;
         out.push({
           id: `${clueType}-${rng.seed}-${i}-${rng.randint(1000, 9999)}`,
           type: clueType,
-          text: chosenPool[i].text,
+          text,
           roundNumber: 0,
           isPlaceholder: false,
         });
       } else {
-        out.push(placeholderClue(rng, clueType, i, owners));
+        out.push(placeholderClue(rng, clueType, i, nameFor()));
       }
     }
     return out;
@@ -221,11 +219,10 @@ function placeholderCharacter(index: number): Character {
   };
 }
 
-function placeholderClue(rng: GameRNG, clueType: ClueType, index: number, owners: Character[] | null): GeneratedClue {
-  const who = owners && owners.length ? owners[0].nameMale : "someone";
+function placeholderClue(rng: GameRNG, clueType: ClueType, index: number, name: string): GeneratedClue {
   const text: Record<ClueType, string> = {
-    thread: "[PLACEHOLDER thread] Something subtly ties the murderer to the scene.",
-    redirect: `[PLACEHOLDER redirect] A true detail makes ${who} look guilty.`,
+    thread: `[PLACEHOLDER thread] Something subtly ties ${name} to the scene.`,
+    redirect: `[PLACEHOLDER redirect] A true detail makes ${name} look guilty.`,
     noise: "[PLACEHOLDER noise] An odd detail that ultimately means nothing.",
   };
   return {
@@ -241,5 +238,3 @@ function renumber(clue: GeneratedClue, roundNumber: number): GeneratedClue {
   clue.roundNumber = roundNumber;
   return clue;
 }
-
-export { THREADS_PER_GAME };

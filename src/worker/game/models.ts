@@ -2,6 +2,11 @@
 // (Ported from the Python `models.py` — same shapes, camelCased for TS.)
 
 export type Role = "murderer" | "accomplice" | "innocent";
+
+// GDD section 11 clue types. All clues are true.
+//  - noise:    sounds relevant, leads nowhere.
+//  - redirect: true info that points at an innocent player.
+//  - thread:   subtly implicates the murderer; only damning in combination.
 export type ClueType = "noise" | "redirect" | "thread";
 
 // One entry in the designated-character bank.
@@ -17,16 +22,6 @@ export interface Character {
   secret: string;
   /** 0..1 — how forthcoming the character is when read aloud. */
   candor: number;
-}
-
-// One entry in the clue bank.
-export interface Clue {
-  characterKey: string;
-  type: ClueType;
-  text: string;
-  /** Scenario scope; omit for "any location" / "any time". */
-  location?: string;
-  timeOfDeath?: string;
 }
 
 export interface DeathLocation {
